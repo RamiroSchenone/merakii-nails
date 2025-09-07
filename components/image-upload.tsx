@@ -88,7 +88,8 @@ export function ImageUpload({ onImageUploaded, onCancel }: ImageUploadProps) {
     } catch (error) {
       console.error('❌ Error subiendo imagen:', error)
       toast.dismiss(loadingToast)
-      toast.error(`Error al subir la imagen: ${error.message}`)
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido'
+      toast.error(`Error al subir la imagen: ${errorMessage}`)
     } finally {
       setUploading(false)
     }

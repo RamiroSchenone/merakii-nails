@@ -159,7 +159,7 @@ export class ReservationsService {
     
     reservations?.forEach(reservation => {
       const startTime = reservation.appointment_time
-      const duration = reservation.service?.duration || 60
+      const duration = (reservation.service as any)?.duration || 60
       
       // Calcular slots ocupados basado en la duración
       const startMinutes = this.timeToMinutes(startTime)

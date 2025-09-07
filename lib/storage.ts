@@ -30,8 +30,7 @@ export class StorageService {
       if (error) {
         console.error('❌ Error de Supabase Storage:', {
           message: error.message,
-          statusCode: error.statusCode,
-          error: error.error,
+          error: (error as any).error,
           details: error
         })
         throw new Error(`Error subiendo imagen: ${error.message}`)

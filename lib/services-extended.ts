@@ -322,7 +322,7 @@ export class TimeSlotsService {
           
           if (reservations && reservations.length > 0) {
             reservations.forEach(reservation => {
-              const serviceDuration = reservation.services?.duration || 60
+              const serviceDuration = (reservation.services as any)?.duration || 60
               const slotsNeeded = Math.ceil(serviceDuration / 60)
               
               // Bloquear todos los slots necesarios
@@ -345,7 +345,7 @@ export class TimeSlotsService {
       }
       
       // Generar horarios de 1 hora
-      const timeSlots = this.generateHourSlots(workingDay.start_time, workingDay.end_time)
+      const timeSlots = this.generateHourSlots(workingDay.start_time || '09:00', workingDay.end_time || '18:00')
       
       // Obtener reservas existentes para la fecha
       const { data: reservations, error: reservationsError } = await supabase
@@ -366,7 +366,7 @@ export class TimeSlotsService {
       
       if (reservations && reservations.length > 0) {
         reservations.forEach(reservation => {
-          const serviceDuration = reservation.services?.duration || 60
+          const serviceDuration = (reservation.services as any)?.duration || 60
           const slotsNeeded = Math.ceil(serviceDuration / 60)
           
           // Bloquear todos los slots necesarios

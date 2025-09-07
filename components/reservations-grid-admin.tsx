@@ -70,7 +70,8 @@ export function ReservationsGridAdmin() {
     } catch (error) {
       console.error('Error actualizando estado:', error)
       toast.dismiss(loadingToast)
-      toast.error(`Error al actualizar el estado: ${error.message}`)
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido'
+      toast.error(`Error al actualizar el estado: ${errorMessage}`)
     }
   }
 

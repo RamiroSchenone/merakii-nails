@@ -2,16 +2,10 @@
 
 import { useState, useEffect } from "react"
 import { WorkingHoursService } from "@/lib/services-extended"
-
-interface WorkingDay {
-  day_of_week: number
-  is_working: boolean
-  start_time: string
-  end_time: string
-}
+import { WorkingHours } from "@/lib/database.types"
 
 export function useWorkingHours() {
-  const [workingDays, setWorkingDays] = useState<WorkingDay[]>([])
+  const [workingDays, setWorkingDays] = useState<WorkingHours[]>([])
   const [loading, setLoading] = useState(true)
 
   const loadWorkingHours = async () => {

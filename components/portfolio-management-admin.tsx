@@ -95,8 +95,8 @@ export function PortfolioManagementAdmin() {
 
       const itemData = {
         title: formData.title,
-        description: formData.description || null,
-        image_url: formData.image_url || null,
+        description: formData.description || '',
+        image_url: formData.image_url || '',
         tags: tagsArray,
         is_featured: formData.is_featured,
         display_order: formData.display_order
