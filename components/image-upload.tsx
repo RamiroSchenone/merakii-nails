@@ -61,7 +61,7 @@ export function ImageUpload({ onImageUploaded, onCancel }: ImageUploadProps) {
       // Generar nombre único
       const timestamp = Date.now()
       const fileExtension = selectedFile.name.split('.').pop()
-      const finalFileName = `${fileName || 'portfolio'}-${timestamp}.${fileExtension}`
+      const finalFileName = `${fileName || 'trabajo'}-${timestamp}.${fileExtension}`
       
       console.log('📝 Nombre del archivo:', finalFileName)
       
@@ -110,7 +110,7 @@ export function ImageUpload({ onImageUploaded, onCancel }: ImageUploadProps) {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <ImageIcon className="h-5 w-5" />
-          Subir Imagen del Portfolio
+          Subir Imagen del Trabajo
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">

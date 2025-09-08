@@ -16,7 +16,7 @@ export default function PortfolioPage() {
     <MainLayout
       showBackButton={true}
       backHref="/"
-      title="Portfolio"
+      title="Mis Trabajos"
       subtitle="Descubre nuestros trabajos más destacados"
     >
       <PortfolioGridSupabase />

@@ -7,8 +7,10 @@ export interface Database {
           name: string
           description: string
           duration: number // en minutos
-          price: number // en centavos
+          price: number // en pesos argentinos
           is_active: boolean
+          has_retiro: boolean // incluye retiro de uñas
+          has_diseno: boolean // incluye diseño personalizado
           created_at: string
           updated_at: string
         }
@@ -19,6 +21,8 @@ export interface Database {
           duration: number
           price: number
           is_active?: boolean
+          has_retiro?: boolean
+          has_diseno?: boolean
           created_at?: string
           updated_at?: string
         }
@@ -29,6 +33,8 @@ export interface Database {
           duration?: number
           price?: number
           is_active?: boolean
+          has_retiro?: boolean
+          has_diseno?: boolean
           created_at?: string
           updated_at?: string
         }

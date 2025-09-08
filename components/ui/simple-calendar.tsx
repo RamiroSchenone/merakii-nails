@@ -9,11 +9,11 @@ interface SimpleCalendarProps {
   selected?: Date
   onSelect?: (date: Date | undefined) => void
   disabled?: (date: Date) => boolean
-  workingDays?: number[] // Array de días de la semana que se trabaja (0 = domingo, 1 = lunes, etc.)
+  workingDays?: number[] // Array de días de la semana que se trabaja (0 = lunes, 1 = martes, ..., 5 = sábado)
   className?: string
 }
 
-const DAYS_OF_WEEK = ['Do', 'Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sá']
+const DAYS_OF_WEEK = ['Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sá', 'Do']
 const MONTHS = [
   'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
   'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'
@@ -23,7 +23,7 @@ export function SimpleCalendar({
   selected,
   onSelect,
   disabled,
-  workingDays = [1, 2, 3, 4, 5, 6], // Por defecto trabaja de lunes a sábado
+  workingDays, // No establecer valor por defecto aquí, se manejará en la lógica
   className
 }: SimpleCalendarProps) {
   const [currentDate, setCurrentDate] = useState(new Date())
@@ -38,8 +38,16 @@ export function SimpleCalendar({
     }
     
     // Deshabilitar días que no se trabajan
-    const dayOfWeek = date.getDay()
-    if (workingDays && !workingDays.includes(dayOfWeek)) {
+    const jsDayOfWeek = date.getDay()
+    // Convertir a sistema argentino: Domingo JS (0) -> -1, Lunes JS (1) -> 0, etc.
+    const argentineDayOfWeek = jsDayOfWeek === 0 ? -1 : jsDayOfWeek - 1
+    
+    // Si no hay configuración de workingDays, usar días por defecto (Lunes a Sábado)
+    const defaultWorkingDays = [0, 1, 2, 3, 4, 5] // Sistema argentino: Lunes=0, Sábado=5
+    const effectiveWorkingDays = (!workingDays || workingDays.length === 0) ? defaultWorkingDays : workingDays
+    
+    // Verificar si el día está en los días de trabajo
+    if (!effectiveWorkingDays.includes(argentineDayOfWeek)) {
       return true
     }
     
@@ -67,7 +75,9 @@ export function SimpleCalendar({
     const firstDay = new Date(year, month, 1)
     const lastDay = new Date(year, month + 1, 0)
     const daysInMonth = lastDay.getDate()
-    const startingDayOfWeek = firstDay.getDay()
+    const jsStartingDay = firstDay.getDay()
+    // Convertir para que lunes sea 0: Domingo JS (0) -> 6, Lunes JS (1) -> 0, etc.
+    const startingDayOfWeek = jsStartingDay === 0 ? 6 : jsStartingDay - 1
 
     const days = []
     

@@ -26,7 +26,7 @@ export function PortfolioGridSupabase() {
       const data = await PortfolioService.getAll()
       setPortfolioItems(data)
     } catch (err) {
-      setError('Error al cargar el portfolio')
+      setError('Error al cargar los trabajos')
       console.error('Error:', err)
     } finally {
       setLoading(false)
@@ -93,10 +93,10 @@ export function PortfolioGridSupabase() {
         ))}
       </div>
 
-      {/* Portfolio Grid */}
+      {/* Grid de Trabajos */}
       {displayedItems.length === 0 && !loading ? (
         <div className="text-center text-muted-foreground py-12">
-          <p>No hay trabajos en el portfolio que coincidan con los filtros.</p>
+          <p>No hay trabajos que coincidan con los filtros.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">

@@ -43,8 +43,8 @@ export default function AdminPage() {
   }
 
   // Función para formatear precio
-  const formatPrice = (priceInCents: number) => {
-    return `$${(priceInCents / 100).toFixed(0)}`
+  const formatPrice = (priceInPesos: number) => {
+    return `$${priceInPesos.toLocaleString('es-AR')}`
   }
 
   return (
@@ -66,15 +66,16 @@ export default function AdminPage() {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="rounded-xl bg-transparent"
-                onClick={() => setActiveTab('config')}
+              <div 
+                className={`px-3 py-2 rounded-xl border text-sm font-medium flex items-center gap-2 ${
+                  activeTab === 'config' 
+                    ? 'bg-primary text-primary-foreground border-primary' 
+                    : 'bg-transparent border-border text-muted-foreground'
+                }`}
               >
-                <Settings className="mr-2 h-4 w-4" />
+                <Settings className="h-4 w-4" />
                 Configuración
-              </Button>
+              </div>
               <Button 
                 variant="destructive" 
                 size="sm" 
@@ -145,12 +146,12 @@ export default function AdminPage() {
             </Card>
           </div>
 
-          {/* Tabs */}
-          <div className="flex space-x-1 mb-6">
+          {/* Tabs - Responsive */}
+          <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-1 mb-6">
             <Button
               variant={activeTab === 'reservations' ? 'default' : 'outline'}
               onClick={() => setActiveTab('reservations')}
-              className="rounded-xl"
+              className="rounded-xl w-full sm:w-auto"
             >
               <CalendarDays className="h-4 w-4 mr-2" />
               Reservas
@@ -158,7 +159,7 @@ export default function AdminPage() {
             <Button
               variant={activeTab === 'services' ? 'default' : 'outline'}
               onClick={() => setActiveTab('services')}
-              className="rounded-xl"
+              className="rounded-xl w-full sm:w-auto"
             >
               <Clock className="h-4 w-4 mr-2" />
               Servicios
@@ -166,18 +167,18 @@ export default function AdminPage() {
             <Button
               variant={activeTab === 'portfolio' ? 'default' : 'outline'}
               onClick={() => setActiveTab('portfolio')}
-              className="rounded-xl"
+              className="rounded-xl w-full sm:w-auto"
             >
               <ImageIcon className="h-4 w-4 mr-2" />
-              Portfolio
+              Mis Trabajos
             </Button>
             <Button
               variant={activeTab === 'config' ? 'default' : 'outline'}
               onClick={() => setActiveTab('config')}
-              className="rounded-xl"
+              className="rounded-xl w-full sm:w-auto"
             >
               <Settings className="h-4 w-4 mr-2" />
-              Configuración
+              Horarios Laborales
             </Button>
           </div>
 

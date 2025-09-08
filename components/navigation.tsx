@@ -5,12 +5,13 @@ import { usePathname, useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import { cn } from "@/lib/utils"
 import { useState } from "react"
+import { User } from "lucide-react"
 
 const navItems = [
   { href: "/", label: "Inicio" },
-  { href: "/portfolio", label: "Portfolio" },
+  { href: "/portfolio", label: "Mis Trabajos" },
   { href: "/reservas", label: "Reservas" },
-  { href: "/admin", label: "Admin" },
+  { href: "/admin", label: "Admin", icon: User },
 ]
 
 export function Navigation() {
@@ -74,7 +75,11 @@ export function Navigation() {
                     )}
                     disabled={isNavigating}
                   >
-                    {item.label}
+                    {item.icon ? (
+                      <item.icon className="h-4 w-4" />
+                    ) : (
+                      item.label
+                    )}
                     {isNavigating && (
                       <motion.div
                         className="absolute inset-0 bg-primary/20 rounded-lg"

@@ -19,14 +19,14 @@ interface WorkingDay {
   endTime: string
 }
 
+// Sistema argentino: Lunes = 0, Martes = 1, ..., Sábado = 5
 const DAYS_OF_WEEK = [
-  { value: 0, name: "Domingo" },
-  { value: 1, name: "Lunes" },
-  { value: 2, name: "Martes" },
-  { value: 3, name: "Miércoles" },
-  { value: 4, name: "Jueves" },
-  { value: 5, name: "Viernes" },
-  { value: 6, name: "Sábado" },
+  { value: 0, name: "Lunes" },
+  { value: 1, name: "Martes" },
+  { value: 2, name: "Miércoles" },
+  { value: 3, name: "Jueves" },
+  { value: 4, name: "Viernes" },
+  { value: 5, name: "Sábado" },
 ]
 
 export function WorkingHoursConfig() {
@@ -67,11 +67,25 @@ export function WorkingHoursConfig() {
   }
 
   const updateWorkingDay = (dayOfWeek: number, field: keyof WorkingDay, value: any) => {
-    setWorkingDays(prev => prev.map(day => 
-      day.dayOfWeek === dayOfWeek 
-        ? { ...day, [field]: value }
-        : day
-    ))
+    setWorkingDays(prev => prev.map(day => {
+      if (day.dayOfWeek === dayOfWeek) {
+        const updatedDay = { ...day, [field]: value }
+        
+        // Si se está activando el día y no tiene horas válidas, asignar horas por defecto
+        if (field === 'isWorking' && value === true) {
+          if (!updatedDay.startTime || updatedDay.startTime === '') {
+            updatedDay.startTime = '09:00'
+          }
+          if (!updatedDay.endTime || updatedDay.endTime === '') {
+            updatedDay.endTime = '18:00'
+          }
+        }
+        
+        console.log(`🔄 Actualizando ${day.dayName}:`, updatedDay)
+        return updatedDay
+      }
+      return day
+    }))
   }
 
   const saveWorkingHours = async () => {
@@ -79,14 +93,25 @@ export function WorkingHoursConfig() {
       setSaving(true)
       
       // Guardar cada día de la semana
-      const savePromises = workingDays.map(day => 
-        WorkingHoursService.updateWorkingHours(
+      console.log('🔄 Estado actual de workingDays:', workingDays)
+      
+      const savePromises = workingDays.map(day => {
+        console.log(`💾 Guardando ${day.dayName}:`, {
+          dayOfWeek: day.dayOfWeek,
+          isWorking: day.isWorking,
+          startTime: day.startTime,
+          endTime: day.endTime,
+          willSaveStartTime: day.isWorking ? day.startTime : undefined,
+          willSaveEndTime: day.isWorking ? day.endTime : undefined
+        })
+        
+        return WorkingHoursService.updateWorkingHours(
           day.dayOfWeek,
           day.isWorking,
           day.isWorking ? day.startTime : undefined,
           day.isWorking ? day.endTime : undefined
         )
-      )
+      })
       
       // Ejecutar todas las operaciones en paralelo
       await Promise.all(savePromises)
@@ -148,55 +173,65 @@ export function WorkingHoursConfig() {
         {workingDays.map((day) => (
           <div 
             key={day.dayOfWeek} 
-            className={`flex items-center justify-between p-4 border rounded-lg transition-all cursor-pointer hover:shadow-md ${
+            className={`p-4 border rounded-lg transition-all ${
               day.isWorking 
                 ? 'bg-primary/5 border-primary/20 shadow-sm' 
                 : 'bg-card border-border hover:border-primary/30'
             }`}
-            onClick={() => updateWorkingDay(day.dayOfWeek, 'isWorking', !day.isWorking)}
           >
-            <div className="flex items-center gap-4">
-              <div className="w-24">
-                <Label className={`text-sm font-medium ${day.isWorking ? 'text-primary font-semibold' : 'text-foreground'}`}>
+            {/* Header del día - Responsive */}
+            <div className="flex items-center justify-between mb-3 cursor-pointer"
+                 onClick={() => updateWorkingDay(day.dayOfWeek, 'isWorking', !day.isWorking)}>
+              <div className="flex items-center gap-3">
+                <Label className={`text-sm font-medium min-w-[80px] sm:min-w-[100px] ${
+                  day.isWorking ? 'text-primary font-semibold' : 'text-foreground'
+                }`}>
                   {day.dayName}
                 </Label>
+                <Switch
+                  checked={day.isWorking}
+                  onCheckedChange={(checked) => updateWorkingDay(day.dayOfWeek, 'isWorking', checked)}
+                  onClick={(e) => e.stopPropagation()}
+                />
               </div>
-              <Switch
-                checked={day.isWorking}
-                onCheckedChange={(checked) => updateWorkingDay(day.dayOfWeek, 'isWorking', checked)}
-                onClick={(e) => e.stopPropagation()}
-              />
+              
+              {!day.isWorking && (
+                <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 hover:bg-yellow-200 border-yellow-300">
+                  Activar
+                </Badge>
+              )}
             </div>
             
-            {day.isWorking ? (
-              <div className="flex items-center gap-2">
+            {/* Horarios - Stack en móvil, inline en desktop */}
+            {day.isWorking && (
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 ml-2">
                 <div className="flex items-center gap-2">
-                  <Label htmlFor={`start-${day.dayOfWeek}`} className="text-sm">Desde:</Label>
+                  <Label htmlFor={`start-${day.dayOfWeek}`} className="text-sm min-w-[50px]">
+                    Desde:
+                  </Label>
                   <Input
                     id={`start-${day.dayOfWeek}`}
                     type="time"
                     value={day.startTime}
                     onChange={(e) => updateWorkingDay(day.dayOfWeek, 'startTime', e.target.value)}
                     onClick={(e) => e.stopPropagation()}
-                    className="w-24"
+                    className="w-28 sm:w-32"
                   />
                 </div>
                 <div className="flex items-center gap-2">
-                  <Label htmlFor={`end-${day.dayOfWeek}`} className="text-sm">Hasta:</Label>
+                  <Label htmlFor={`end-${day.dayOfWeek}`} className="text-sm min-w-[50px]">
+                    Hasta:
+                  </Label>
                   <Input
                     id={`end-${day.dayOfWeek}`}
                     type="time"
                     value={day.endTime}
                     onChange={(e) => updateWorkingDay(day.dayOfWeek, 'endTime', e.target.value)}
                     onClick={(e) => e.stopPropagation()}
-                    className="w-24"
+                    className="w-28 sm:w-32"
                   />
                 </div>
               </div>
-            ) : (
-              <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 hover:bg-yellow-200 border-yellow-300">
-                Activar
-              </Badge>
             )}
           </div>
         ))}

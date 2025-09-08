@@ -47,15 +47,26 @@ export class ServicesService {
   }
 
   static async update(id: string, updates: Partial<ServiceInsert>): Promise<Service> {
-    const { data, error } = await supabase
-      .from('services')
-      .update(updates)
-      .eq('id', id)
-      .select()
-      .single()
+    try {
+      const response = await fetch(`/api/services/${id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updates),
+      })
 
-    if (error) throw error
-    return data
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to update service')
+      }
+
+      const data = await response.json()
+      return data
+    } catch (error) {
+      console.error('Error updating service via API:', error)
+      throw error
+    }
   }
 
   static async delete(id: string): Promise<void> {
@@ -214,6 +225,26 @@ export class SiteConfigService {
   }
 }
 
+/**
+ * Convierte el día de la semana de JavaScript (0=Domingo) al sistema argentino (0=Lunes)
+ * JavaScript: Dom=0, Lun=1, Mar=2, Mie=3, Jue=4, Vie=5, Sab=6
+ * Argentino:  Lun=0, Mar=1, Mie=2, Jue=3, Vie=4, Sab=5
+ */
+function convertToArgentineDayOfWeek(jsDay: number): number {
+  // Si es domingo (0 en JS), no se trabaja en Argentina (retornamos -1 para indicar no válido)
+  if (jsDay === 0) return -1
+  // Para lunes a sábado: restar 1 para convertir al sistema argentino
+  return jsDay - 1
+}
+
+/**
+ * Convierte del sistema argentino al sistema JavaScript
+ */
+function convertToJavaScriptDayOfWeek(argDay: number): number {
+  // Sumar 1 para convertir del sistema argentino al JavaScript
+  return argDay + 1
+}
+
 // Servicio para horarios de trabajo
 export class WorkingHoursService {
   static async getAll(): Promise<WorkingHours[]> {
@@ -248,57 +279,98 @@ export class WorkingHoursService {
       if (error) throw error
       return null
     } else {
-      // Mapear número del día al nombre
-      const dayNames = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
+      // Mapear número del día al nombre (sistema argentino: Lunes = 0, Sábado = 5)
+      const dayNames = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
       const dayName = dayNames[dayOfWeek]
 
-      // Si el día está activado, crear o actualizar el registro
-      const workingHoursData: WorkingHoursInsert = {
-        day_of_week: dayOfWeek,
-        day_name: dayName,
-        is_working: isWorking,
-        start_time: startTime || null,
-        end_time: endTime || null,
-        updated_at: new Date().toISOString()
-      }
-
-      const { data, error } = await supabase
+      // Primero verificar si ya existe un registro para este día
+      const { data: existingRecord, error: selectError } = await supabase
         .from('working_hours')
-        .upsert(workingHoursData)
-        .select()
+        .select('*')
+        .eq('day_of_week', dayOfWeek)
         .single()
 
-      if (error) throw error
-      return data
+      if (selectError && selectError.code !== 'PGRST116') {
+        // PGRST116 es "no rows returned", que es esperado si no existe el registro
+        throw selectError
+      }
+
+      if (existingRecord) {
+        // Si existe, actualizar el registro existente
+        const { data, error } = await supabase
+          .from('working_hours')
+          .update({
+            day_name: dayName,
+            is_working: isWorking,
+            start_time: startTime || null,
+            end_time: endTime || null,
+            updated_at: new Date().toISOString()
+          })
+          .eq('day_of_week', dayOfWeek)
+          .select()
+          .single()
+
+        if (error) throw error
+        return data
+      } else {
+        // Si no existe, crear un nuevo registro
+        const workingHoursData: WorkingHoursInsert = {
+          day_of_week: dayOfWeek,
+          day_name: dayName,
+          is_working: isWorking,
+          start_time: startTime || null,
+          end_time: endTime || null,
+          updated_at: new Date().toISOString()
+        }
+
+        const { data, error } = await supabase
+          .from('working_hours')
+          .insert(workingHoursData)
+          .select()
+          .single()
+
+        if (error) throw error
+        return data
+      }
     }
   }
 }
 
 // Servicio para obtener horarios disponibles dinámicamente
 export class TimeSlotsService {
-  static async getTimeSlotsWithStatus(date: string): Promise<{ time: string, isOccupied: boolean }[]> {
+  static async getTimeSlotsWithStatus(date: string, serviceDuration?: number): Promise<{ time: string, isOccupied: boolean }[]> {
     try {
-      // Verificar si está en cache
+      // Verificar si está en cache (solo para consultas sin serviceDuration específico)
       const cacheKey = `working_hours_${date}`
-      const cached = localStorage.getItem(cacheKey)
-      if (cached) {
-        return JSON.parse(cached)
+      if (!serviceDuration) {
+        const cached = localStorage.getItem(cacheKey)
+        if (cached) {
+          return JSON.parse(cached)
+        }
       }
       
       // Obtener horarios de trabajo usando la misma lógica del calendario
       const workingHours = await WorkingHoursService.getAll()
       const appointmentDate = new Date(date)
-      const dayOfWeek = appointmentDate.getDay()
+      // Parche: agregar +1 al día para corregir el offset
+      appointmentDate.setDate(appointmentDate.getDate() + 1)
+      const jsDayOfWeek = appointmentDate.getDay()
+      const argentineDayOfWeek = convertToArgentineDayOfWeek(jsDayOfWeek)
+      
+      // Si es domingo, no hay horarios disponibles
+      if (argentineDayOfWeek === -1) {
+        return []
+      }
       
       // Buscar el día de trabajo
       const workingDay = workingHours.find(day => 
-        day.day_of_week === dayOfWeek && day.is_working
+        day.day_of_week === argentineDayOfWeek && day.is_working
       )
       
       if (!workingDay) {
         // Temporal: generar horarios básicos para días de trabajo si no hay configuración
-        if (dayOfWeek === 5 || dayOfWeek === 6) { // Viernes o Sábado
-          const tempSlots = []
+        if (argentineDayOfWeek >= 0 && argentineDayOfWeek <= 5) { // Lunes a Sábado en sistema argentino
+          const tempSlots: string[] = []
           for (let hour = 9; hour < 18; hour++) {
             tempSlots.push(`${hour.toString().padStart(2, '0')}:00`)
           }
@@ -335,7 +407,7 @@ export class TimeSlotsService {
           
           const result = tempSlots.map(time => ({
             time,
-            isOccupied: occupiedTimes.has(time)
+            isOccupied: this.isSlotUnavailable(time, tempSlots, occupiedTimes, serviceDuration)
           }))
           
           return result
@@ -380,18 +452,153 @@ export class TimeSlotsService {
       // Crear resultado final con estado de ocupación
       const result = timeSlots.map(time => ({
         time,
-        isOccupied: occupiedTimes.has(time)
+        isOccupied: this.isSlotUnavailable(time, timeSlots, occupiedTimes, serviceDuration)
       }))
       
-      // Guardar en cache por 1 hora
-      localStorage.setItem(cacheKey, JSON.stringify(result))
-      setTimeout(() => localStorage.removeItem(cacheKey), 60 * 60 * 1000)
+      // Guardar en cache solo si no hay serviceDuration específico
+      if (!serviceDuration) {
+        localStorage.setItem(cacheKey, JSON.stringify(result))
+        setTimeout(() => localStorage.removeItem(cacheKey), 60 * 60 * 1000)
+      }
       
       return result
       
     } catch (error) {
       console.error('Error generando horarios:', error)
       return []
+    }
+  }
+
+  // Método con estado de loading para evitar sobresalto visual
+  static async getTimeSlotsWithStatusAndLoading(date: string, serviceDuration?: number): Promise<{ slots: { time: string, isOccupied: boolean }[], isLoading: boolean }> {
+    try {
+      // Verificar si está en cache (solo para consultas sin serviceDuration específico)
+      const cacheKey = `working_hours_${date}`
+      if (!serviceDuration) {
+        const cached = localStorage.getItem(cacheKey)
+        if (cached) {
+          return { slots: JSON.parse(cached), isLoading: false }
+        }
+      }
+      
+      // Obtener horarios de trabajo usando la misma lógica del calendario
+      const workingHours = await WorkingHoursService.getAll()
+      const appointmentDate = new Date(date)
+      // Parche: agregar +1 al día para corregir el offset
+      appointmentDate.setDate(appointmentDate.getDate() + 1)
+      const jsDayOfWeek = appointmentDate.getDay()
+      const argentineDayOfWeek = convertToArgentineDayOfWeek(jsDayOfWeek)
+      
+      // Si es domingo, no hay horarios disponibles
+      if (argentineDayOfWeek === -1) {
+        return { slots: [], isLoading: false }
+      }
+      
+      // Buscar el día de trabajo
+      const workingDay = workingHours.find(day => 
+        day.day_of_week === argentineDayOfWeek && day.is_working
+      )
+      
+      if (!workingDay) {
+        // Temporal: generar horarios básicos para días de trabajo si no hay configuración
+        if (argentineDayOfWeek >= 0 && argentineDayOfWeek <= 5) { // Lunes a Sábado en sistema argentino
+          const tempSlots: string[] = []
+          for (let hour = 9; hour < 18; hour++) {
+            tempSlots.push(`${hour.toString().padStart(2, '0')}:00`)
+          }
+          
+          // Obtener reservas existentes para la fecha
+          const { data: reservations, error: reservationsError } = await supabase
+            .from('reservations')
+            .select(`
+              appointment_time,
+              services(duration)
+            `)
+            .eq('appointment_date', date)
+            .in('status', ['pending', 'confirmed'])
+          
+          if (reservationsError) {
+            console.error('Error obteniendo reservas:', reservationsError)
+          }
+          
+          // Crear conjunto de horarios ocupados
+          const occupiedTimes = new Set<string>()
+          
+          if (reservations && reservations.length > 0) {
+            reservations.forEach(reservation => {
+              const serviceDuration = (reservation.services as any)?.duration || 60
+              const slotsNeeded = Math.ceil(serviceDuration / 60)
+              
+              // Bloquear todos los slots necesarios
+              for (let i = 0; i < slotsNeeded; i++) {
+                const slotTime = this.addHoursToTime(reservation.appointment_time, i)
+                occupiedTimes.add(slotTime)
+              }
+            })
+          }
+          
+          // Crear resultado final con estado de ocupación
+          const result = tempSlots.map(time => ({
+            time,
+            isOccupied: this.isSlotUnavailable(time, tempSlots, occupiedTimes, serviceDuration)
+          }))
+          
+          return { slots: result, isLoading: false }
+        }
+        
+        return { slots: [], isLoading: false }
+      }
+      
+      // Generar horarios de 1 hora
+      const timeSlots = this.generateHourSlots(workingDay.start_time || '09:00', workingDay.end_time || '18:00')
+      
+      // Obtener reservas existentes para la fecha
+      const { data: reservations, error: reservationsError } = await supabase
+        .from('reservations')
+        .select(`
+          appointment_time,
+          services(duration)
+        `)
+        .eq('appointment_date', date)
+        .in('status', ['pending', 'confirmed'])
+      
+      if (reservationsError) {
+        console.error('Error obteniendo reservas:', reservationsError)
+      }
+      
+      // Crear conjunto de horarios ocupados
+      const occupiedTimes = new Set<string>()
+      
+      if (reservations && reservations.length > 0) {
+        reservations.forEach(reservation => {
+          const serviceDuration = (reservation.services as any)?.duration || 60
+          const slotsNeeded = Math.ceil(serviceDuration / 60)
+          
+          // Bloquear todos los slots necesarios
+          for (let i = 0; i < slotsNeeded; i++) {
+            const slotTime = this.addHoursToTime(reservation.appointment_time, i)
+            occupiedTimes.add(slotTime)
+          }
+        })
+      }
+      
+      // Crear resultado final con estado de ocupación
+      const result = timeSlots.map(time => ({
+        time,
+        isOccupied: this.isSlotUnavailable(time, timeSlots, occupiedTimes, serviceDuration)
+      }))
+      
+      // Guardar en cache solo si no hay serviceDuration específico
+      if (!serviceDuration) {
+        localStorage.setItem(cacheKey, JSON.stringify(result))
+        setTimeout(() => localStorage.removeItem(cacheKey), 60 * 60 * 1000)
+      }
+      
+      return { slots: result, isLoading: false }
+      
+    } catch (error) {
+      console.error('Error generando horarios:', error)
+      return { slots: [], isLoading: false }
     }
   }
 
@@ -440,6 +647,53 @@ export class TimeSlotsService {
     const hours = Math.floor(minutes / 60)
     const mins = minutes % 60
     return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`
+  }
+
+  /**
+   * Verifica si un slot está disponible considerando la duración del servicio
+   * Un slot está ocupado si:
+   * 1. El slot mismo está ocupado, O
+   * 2. No hay suficientes slots consecutivos disponibles para la duración del servicio
+   */
+  private static isSlotUnavailable(
+    startTime: string, 
+    allSlots: string[], 
+    occupiedTimes: Set<string>, 
+    serviceDuration?: number
+  ): boolean {
+    // Si no se especifica duración del servicio, usar lógica básica
+    if (!serviceDuration) {
+      return occupiedTimes.has(startTime)
+    }
+
+    // Calcular cuántos slots consecutivos necesita el servicio
+    const slotsNeeded = Math.ceil(serviceDuration / 60)
+    
+    // Si solo necesita 1 slot, verificar si está ocupado
+    if (slotsNeeded <= 1) {
+      return occupiedTimes.has(startTime)
+    }
+
+    // Para servicios de múltiples horas, verificar disponibilidad consecutiva
+    const startIndex = allSlots.indexOf(startTime)
+    if (startIndex === -1) {
+      return true // Slot no existe
+    }
+
+    // Verificar que hay suficientes slots después de este
+    if (startIndex + slotsNeeded > allSlots.length) {
+      return true // No hay suficientes slots consecutivos
+    }
+
+    // Verificar que todos los slots necesarios estén disponibles
+    for (let i = 0; i < slotsNeeded; i++) {
+      const slotTime = allSlots[startIndex + i]
+      if (occupiedTimes.has(slotTime)) {
+        return true // Al menos uno de los slots necesarios está ocupado
+      }
+    }
+
+    return false // Todos los slots necesarios están disponibles
   }
 }
 
