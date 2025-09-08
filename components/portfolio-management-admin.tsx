@@ -38,8 +38,8 @@ export function PortfolioManagementAdmin() {
       const items = await PortfolioService.getAll()
       setPortfolioItems(items)
     } catch (error) {
-      console.error('Error cargando portfolio:', error)
-      alert('Error al cargar el portfolio')
+      console.error('Error cargando trabajos:', error)
+      alert('Error al cargar los trabajos')
     } finally {
       setLoading(false)
     }
@@ -114,13 +114,13 @@ export function PortfolioManagementAdmin() {
       setEditingItem(null)
     } catch (error) {
       console.error('Error guardando item:', error)
-      alert('Error al guardar el item del portfolio')
+      alert('Error al guardar el trabajo')
     }
   }
 
   // Eliminar item
   const handleDeleteItem = async (id: string) => {
-    if (!confirm('¿Estás seguro de que quieres eliminar este item del portfolio?')) {
+    if (!confirm('¿Estás seguro de que quieres eliminar este trabajo?')) {
       return
     }
 
@@ -129,7 +129,7 @@ export function PortfolioManagementAdmin() {
       await loadPortfolioItems()
     } catch (error) {
       console.error('Error eliminando item:', error)
-      alert('Error al eliminar el item del portfolio')
+      alert('Error al eliminar el trabajo')
     }
   }
 
@@ -160,7 +160,7 @@ export function PortfolioManagementAdmin() {
       <div className="flex justify-center items-center py-12">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted">Cargando portfolio...</p>
+          <p className="text-muted">Cargando trabajos...</p>
         </div>
       </div>
     )
@@ -171,8 +171,8 @@ export function PortfolioManagementAdmin() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-foreground">Gestión de Portfolio</h2>
-          <p className="text-muted">Administra los trabajos mostrados en el portfolio</p>
+          <h2 className="text-2xl font-bold text-foreground">Gestión de Mis Trabajos</h2>
+          <p className="text-muted">Administra los trabajos mostrados en la galería</p>
         </div>
         <Button onClick={openAddDialog} className="rounded-xl">
           <Plus className="mr-2 h-4 w-4" />
@@ -289,10 +289,10 @@ export function PortfolioManagementAdmin() {
         <div className="text-center py-12">
           <ImageIcon className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
           <h3 className="text-lg font-semibold text-foreground mb-2">
-            {searchTerm ? "No se encontraron trabajos" : "No hay trabajos en el portfolio"}
+            {searchTerm ? "No se encontraron trabajos" : "No hay trabajos en la galería"}
           </h3>
           <p className="text-muted mb-4">
-            {searchTerm ? "Intenta con otros términos de búsqueda" : "Agrega tu primer trabajo al portfolio"}
+            {searchTerm ? "Intenta con otros términos de búsqueda" : "Agrega tu primer trabajo a la galería"}
           </p>
           {!searchTerm && (
             <Button onClick={openAddDialog} className="rounded-xl">

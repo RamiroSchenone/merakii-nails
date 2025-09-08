@@ -37,15 +37,26 @@ export class ServicesService {
   }
 
   static async update(id: string, updates: Partial<ServiceInsert>): Promise<Service> {
-    const { data, error } = await supabase
-      .from('services')
-      .update(updates)
-      .eq('id', id)
-      .select()
-      .single()
+    try {
+      const response = await fetch(`/api/services/${id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updates),
+      })
 
-    if (error) throw error
-    return data
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to update service')
+      }
+
+      const data = await response.json()
+      return data
+    } catch (error) {
+      console.error('Error updating service via API:', error)
+      throw error
+    }
   }
 
   static async delete(id: string): Promise<void> {

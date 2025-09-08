@@ -177,8 +177,8 @@ export function ReservationsGridAdmin() {
   })
 
   // Formatear precio
-  const formatPrice = (priceInCents: number) => {
-    return `$${(priceInCents / 100).toFixed(0)}`
+  const formatPrice = (priceInPesos: number) => {
+    return `$${priceInPesos.toLocaleString('es-AR')}`
   }
 
   // Formatear fecha

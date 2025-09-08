@@ -15,8 +15,8 @@ export function Skeleton({ className, ...props }: React.HTMLAttributes<HTMLDivEl
 // Skeleton para cards de servicios
 export function ServiceCardSkeleton() {
   return (
-    <div className="rounded-2xl border border-border bg-card p-6">
-      <div className="space-y-4">
+    <div className="rounded-2xl border border-border bg-card p-6 h-64 flex flex-col">
+      <div className="space-y-4 flex-1">
         {/* Título */}
         <Skeleton className="h-6 w-3/4" />
         
@@ -25,12 +25,12 @@ export function ServiceCardSkeleton() {
           <Skeleton className="h-4 w-full" />
           <Skeleton className="h-4 w-2/3" />
         </div>
-        
-        {/* Footer con precio y botón */}
-        <div className="flex items-center justify-between">
-          <Skeleton className="h-8 w-16" />
-          <Skeleton className="h-8 w-20" />
-        </div>
+      </div>
+      
+      {/* Footer con precio y botón */}
+      <div className="flex items-center justify-between mt-auto">
+        <Skeleton className="h-8 w-16" />
+        <Skeleton className="h-8 w-20" />
       </div>
     </div>
   )

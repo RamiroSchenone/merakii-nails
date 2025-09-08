@@ -8,7 +8,9 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Plus, Edit, Trash2, Clock, DollarSign, Search, RefreshCw } from "lucide-react"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Plus, Edit, Trash2, Clock, Search, RefreshCw } from "lucide-react"
 import { Service } from "@/lib/database.types"
 import { motion, AnimatePresence } from "framer-motion"
 import { useServicesAdmin } from "@/hooks/use-services-admin"
@@ -22,9 +24,23 @@ export function ServicesManagementAdmin() {
     name: "",
     description: "",
     duration: 60,
-    price: 2500,
-    is_active: true
+    price: 25000,
+    is_active: true,
+    has_retiro: false,
+    has_diseno: false
   })
+
+  // Opciones de duración en incrementos de 30 minutos
+  const durationOptions = [
+    { value: 30, label: "0:30hs" },
+    { value: 60, label: "1:00hs" },
+    { value: 90, label: "1:30hs" },
+    { value: 120, label: "2:00hs" },
+    { value: 150, label: "2:30hs" },
+    { value: 180, label: "3:00hs" },
+    { value: 210, label: "3:30hs" },
+    { value: 240, label: "4:00hs" },
+  ]
 
   // Abrir diálogo para nuevo servicio
   const openNewServiceDialog = () => {
@@ -33,8 +49,10 @@ export function ServicesManagementAdmin() {
       name: "",
       description: "",
       duration: 60,
-      price: 2500,
-      is_active: true
+      price: 25000,
+      is_active: true,
+      has_retiro: false,
+      has_diseno: false
     })
     setIsDialogOpen(true)
   }
@@ -47,7 +65,9 @@ export function ServicesManagementAdmin() {
       description: service.description,
       duration: service.duration,
       price: service.price,
-      is_active: service.is_active
+      is_active: service.is_active,
+      has_retiro: service.has_retiro || false,
+      has_diseno: service.has_diseno || false
     })
     setIsDialogOpen(true)
   }
@@ -91,8 +111,8 @@ export function ServicesManagementAdmin() {
   )
 
   // Formatear precio
-  const formatPrice = (priceInCents: number) => {
-    return `$${(priceInCents / 100).toFixed(0)}`
+  const formatPrice = (priceInPesos: number) => {
+    return `$${priceInPesos.toLocaleString('es-AR')}`
   }
 
   // Formatear duración
@@ -101,12 +121,20 @@ export function ServicesManagementAdmin() {
     const minutes = durationInMinutes % 60
     
     if (hours > 0 && minutes > 0) {
-      return `${hours}h ${minutes}min`
+      return `${hours}:${minutes.toString().padStart(2, '0')}hs aprox.`
     } else if (hours > 0) {
-      return `${hours}h`
+      return `${hours}:00hs aprox.`
     } else {
-      return `${minutes}min`
+      return `${minutes}min aprox.`
     }
+  }
+
+  // Generar leyendas del servicio
+  const getServiceLegends = (service: Service): string[] => {
+    const legends: string[] = []
+    if (service.has_retiro) legends.push("Incluye retiro")
+    if (service.has_diseno) legends.push("Incluye diseño")
+    return legends
   }
 
   if (loading) {
@@ -172,12 +200,19 @@ export function ServicesManagementAdmin() {
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.3, delay: index * 0.05 }}
             >
-              <Card className={`rounded-xl border-border hover:shadow-md transition-shadow ${
+              <Card className={`rounded-xl border-border hover:shadow-md transition-shadow h-52 flex flex-col ${
                 !service.is_active ? 'opacity-60' : ''
               }`}>
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg">{service.name}</CardTitle>
+                    <div>
+                      <CardTitle className="text-lg">{service.name}</CardTitle>
+                      {getServiceLegends(service).length > 0 && (
+                        <p className="text-xs italic text-muted-foreground mt-1">
+                          {getServiceLegends(service).join(" • ")}
+                        </p>
+                      )}
+                    </div>
                     <Badge 
                       variant={service.is_active ? "default" : "secondary"}
                       className={service.is_active ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}
@@ -190,16 +225,17 @@ export function ServicesManagementAdmin() {
                   </CardDescription>
                 </CardHeader>
                 
-                <CardContent className="space-y-3">
-                  {/* Duración y precio */}
-                  <div className="flex items-center justify-between text-sm">
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <Clock className="h-4 w-4" />
-                      <span>{formatDuration(service.duration)}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-primary font-semibold">
-                      <DollarSign className="h-4 w-4" />
-                      <span>{formatPrice(service.price)}</span>
+                <CardContent className="space-y-3 flex-1 flex flex-col justify-between">
+                  <div>
+                    {/* Duración y precio */}
+                    <div className="flex items-center justify-between text-sm">
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <Clock className="h-4 w-4" />
+                        <span>{formatDuration(service.duration)}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-primary font-semibold">
+                        <span>{formatPrice(service.price)}</span>
+                      </div>
                     </div>
                   </div>
                   
@@ -293,26 +329,61 @@ export function ServicesManagementAdmin() {
             
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="duration">Duración (minutos)</Label>
-                <Input
-                  id="duration"
-                  type="number"
-                  value={formData.duration}
-                  onChange={(e) => setFormData({ ...formData, duration: parseInt(e.target.value) || 0 })}
-                  className="rounded-xl"
-                />
+                <Label htmlFor="duration">Duración aproximada</Label>
+                <Select
+                  value={formData.duration.toString()}
+                  onValueChange={(value) => setFormData({ ...formData, duration: parseInt(value) })}
+                >
+                  <SelectTrigger className="rounded-xl">
+                    <SelectValue placeholder="Selecciona duración" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {durationOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value.toString()}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="price">Precio (centavos)</Label>
+                <Label htmlFor="price">Precio (pesos argentinos)</Label>
                 <Input
                   id="price"
                   type="number"
                   value={formData.price}
                   onChange={(e) => setFormData({ ...formData, price: parseInt(e.target.value) || 0 })}
-                  placeholder="2500 = $25"
+                  placeholder="25000"
                   className="rounded-xl"
                 />
+              </div>
+            </div>
+          </div>
+
+          {/* Características del servicio */}
+          <div className="space-y-4">
+            <h4 className="text-sm font-medium text-foreground">Características incluidas</h4>
+            <div className="space-y-3">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="has_retiro"
+                  checked={formData.has_retiro}
+                  onCheckedChange={(checked) => setFormData({ ...formData, has_retiro: !!checked })}
+                />
+                <Label htmlFor="has_retiro" className="text-sm">
+                  Incluye retiro de uñas
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="has_diseno"
+                  checked={formData.has_diseno}
+                  onCheckedChange={(checked) => setFormData({ ...formData, has_diseno: !!checked })}
+                />
+                <Label htmlFor="has_diseno" className="text-sm">
+                  Incluye diseño personalizado
+                </Label>
               </div>
             </div>
           </div>

@@ -6,13 +6,14 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Clock, Instagram, MessageCircle, Sparkles } from "lucide-react"
 import { motion } from "framer-motion"
 import { useServices } from "@/hooks/use-services"
+import { ServiceLegends } from "@/components/service-legends"
 
 export default function HomePage() {
   const { services, loading } = useServices()
 
   // Formatear precio
-  const formatPrice = (priceInCents: number) => {
-    return `$${(priceInCents / 100).toFixed(0)}`
+  const formatPrice = (priceInPesos: number) => {
+    return `$${priceInPesos.toLocaleString('es-AR')}`
   }
 
   // Formatear duración
@@ -21,11 +22,11 @@ export default function HomePage() {
     const minutes = durationInMinutes % 60
     
     if (hours > 0 && minutes > 0) {
-      return `${hours}h ${minutes}min`
+      return `${hours}:${minutes.toString().padStart(2, '0')}hs aprox.`
     } else if (hours > 0) {
-      return `${hours}h`
+      return `${hours}:00hs aprox.`
     } else {
-      return `${minutes}min`
+      return `${minutes}min aprox.`
     }
   }
 
@@ -64,15 +65,12 @@ export default function HomePage() {
           </motion.p>
 
           <motion.div
-            className="flex flex-col gap-4 sm:flex-row sm:justify-center"
+            className="flex justify-center"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.6 }}
           >
             <Button asChild size="lg" className="rounded-2xl">
-              <Link href="/portfolio">Ver Portfolio</Link>
-            </Button>
-            <Button asChild variant="secondary" size="lg" className="rounded-2xl">
               <Link href="/reservas">Reservar Cita</Link>
             </Button>
           </motion.div>
@@ -122,18 +120,19 @@ export default function HomePage() {
                   viewport={{ once: true }}
                   whileHover={{ y: -5 }}
                 >
-                  <Card className="rounded-2xl border-border bg-card transition-all hover:shadow-lg hover:shadow-primary/10">
+                  <Card className="rounded-2xl border-border bg-card transition-all hover:shadow-lg hover:shadow-primary/10 h-64 flex flex-col">
                     <CardHeader>
                       <CardTitle className="text-card-foreground">{service.name}</CardTitle>
+                      <ServiceLegends service={service} className="mt-1" />
                       <CardDescription className="flex items-center gap-2 text-muted">
                         <Clock className="h-4 w-4" />
                         {formatDuration(service.duration)}
                       </CardDescription>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="flex-1">
                       <p className="text-sm text-muted">{service.description}</p>
                     </CardContent>
-                    <CardFooter className="flex items-center justify-between">
+                    <CardFooter className="flex items-center justify-between mt-auto">
                       <span className="text-2xl font-bold text-primary">{formatPrice(service.price)}</span>
                       <Button asChild size="sm" className="rounded-xl">
                         <Link href="/reservas">Reservar</Link>
@@ -144,6 +143,19 @@ export default function HomePage() {
               ))}
             </div>
           )}
+          
+          {/* Disclaimer de precios */}
+          <motion.div
+            className="mt-8 text-center"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.3 }}
+            viewport={{ once: true }}
+          >
+            <p className="text-xs text-muted-foreground italic max-w-2xl mx-auto">
+              * Los precios son aproximados y están sujetos a modificaciones por diseño y/o otras particularidades propias del mismo servicio
+            </p>
+          </motion.div>
         </div>
       </section>
 
