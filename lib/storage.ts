@@ -1,4 +1,4 @@
-import { supabase } from './supabase'
+import { supabase, supabaseAdmin } from './supabase'
 
 // Configuración del bucket de portfolio
 const PORTFOLIO_BUCKET = 'portfolio-images'
@@ -82,7 +82,7 @@ export class StorageService {
   static getPublicUrl(imagePath: string): string {
     // Esta función necesita ser async para usar el cliente autenticado
     // Por ahora mantenemos la implementación original para compatibilidad
-    const { data } = supabase.storage
+    const { data } = supabaseAdmin.storage
       .from(PORTFOLIO_BUCKET)
       .getPublicUrl(imagePath)
     

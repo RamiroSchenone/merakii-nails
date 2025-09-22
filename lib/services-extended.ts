@@ -299,7 +299,8 @@ export class WorkingHoursService {
       const dayName = dayNames[dayOfWeek]
 
       // Primero verificar si ya existe un registro para este día
-      const { data: existingRecord, error: selectError } = await supabase
+      const client = await supabase()
+      const { data: existingRecord, error: selectError } = await client
         .from('working_hours')
         .select('*')
         .eq('day_of_week', dayOfWeek)
