@@ -63,7 +63,14 @@ async function performInit(): Promise<SupabaseClient> {
       auth: {
         autoRefreshToken: true,
         persistSession: false,
+        detectSessionInUrl: false,
       },
+    })
+
+    // Configurar el token en la sesión del cliente
+    await authenticatedClient.auth.setSession({
+      access_token,
+      refresh_token: '', // No necesitamos refresh token para este caso
     })
 
     authToken = access_token
