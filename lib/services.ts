@@ -1,10 +1,10 @@
 import { supabase } from './supabase'
 import { Service, ServiceInsert, Reservation, ReservationInsert, PortfolioItem, PortfolioItemInsert, MercadoPagoToken, MercadoPagoTokenInsert } from './database.types'
 
-// Servicios
 export class ServicesService {
   static async getAll(): Promise<Service[]> {
-    const { data, error } = await supabase
+    const client = await supabase()
+    const { data, error } = await client
       .from('services')
       .select('*')
       .eq('is_active', true)
@@ -15,7 +15,8 @@ export class ServicesService {
   }
 
   static async getById(id: string): Promise<Service | null> {
-    const { data, error } = await supabase
+    const client = await supabase()
+    const { data, error } = await client
       .from('services')
       .select('*')
       .eq('id', id)
@@ -26,7 +27,8 @@ export class ServicesService {
   }
 
   static async create(service: ServiceInsert): Promise<Service> {
-    const { data, error } = await supabase
+    const client = await supabase()
+    const { data, error } = await client
       .from('services')
       .insert(service)
       .select()
@@ -60,7 +62,8 @@ export class ServicesService {
   }
 
   static async delete(id: string): Promise<void> {
-    const { error } = await supabase
+    const client = await supabase()
+    const { error } = await client
       .from('services')
       .delete()
       .eq('id', id)
@@ -72,7 +75,8 @@ export class ServicesService {
 // Reservas
 export class ReservationsService {
   static async getAll(): Promise<(Reservation & { service: Service })[]> {
-    const { data, error } = await supabase
+    const client = await supabase()
+    const { data, error } = await client
       .from('reservations')
       .select(`
         *,
@@ -86,7 +90,8 @@ export class ReservationsService {
   }
 
   static async getById(id: string): Promise<(Reservation & { service: Service }) | null> {
-    const { data, error } = await supabase
+    const client = await supabase()
+    const { data, error } = await client
       .from('reservations')
       .select(`
         *,
@@ -100,7 +105,8 @@ export class ReservationsService {
   }
 
   static async getByEmail(email: string): Promise<(Reservation & { service: Service })[]> {
-    const { data, error } = await supabase
+    const client = await supabase()
+    const { data, error } = await client
       .from('reservations')
       .select(`
         *,
@@ -114,7 +120,8 @@ export class ReservationsService {
   }
 
   static async create(reservation: ReservationInsert): Promise<Reservation> {
-    const { data, error } = await supabase
+    const client = await supabase()
+    const { data, error } = await client
       .from('reservations')
       .insert(reservation)
       .select()
@@ -125,7 +132,8 @@ export class ReservationsService {
   }
 
   static async update(id: string, updates: Partial<ReservationInsert>): Promise<Reservation> {
-    const { data, error } = await supabase
+    const client = await supabase()
+    const { data, error } = await client
       .from('reservations')
       .update(updates)
       .eq('id', id)
@@ -137,7 +145,8 @@ export class ReservationsService {
   }
 
   static async updateStatus(id: string, status: 'pending' | 'confirmed' | 'cancelled' | 'completed'): Promise<Reservation> {
-    const { data, error } = await supabase
+    const client = await supabase()
+    const { data, error } = await client
       .from('reservations')
       .update({ status })
       .eq('id', id)
@@ -150,7 +159,8 @@ export class ReservationsService {
 
   static async getAvailableTimeSlots(date: string): Promise<string[]> {
     // Obtener todas las reservas para la fecha específica
-    const { data: reservations, error } = await supabase
+    const client = await supabase()
+    const { data: reservations, error } = await client
       .from('reservations')
       .select('appointment_time, service:services(duration)')
       .eq('appointment_date', date)
@@ -203,7 +213,8 @@ export class ReservationsService {
 // Portfolio
 export class PortfolioService {
   static async getAll(): Promise<PortfolioItem[]> {
-    const { data, error } = await supabase
+    const client = await supabase()
+    const { data, error } = await client
       .from('portfolio_items')
       .select('*')
       .order('display_order', { ascending: true })
@@ -213,7 +224,8 @@ export class PortfolioService {
   }
 
   static async getFeatured(): Promise<PortfolioItem[]> {
-    const { data, error } = await supabase
+    const client = await supabase()
+    const { data, error } = await client
       .from('portfolio_items')
       .select('*')
       .eq('is_featured', true)
@@ -224,7 +236,8 @@ export class PortfolioService {
   }
 
   static async getByTags(tags: string[]): Promise<PortfolioItem[]> {
-    const { data, error } = await supabase
+    const client = await supabase()
+    const { data, error } = await client
       .from('portfolio_items')
       .select('*')
       .overlaps('tags', tags)
@@ -235,7 +248,8 @@ export class PortfolioService {
   }
 
   static async create(item: PortfolioItemInsert): Promise<PortfolioItem> {
-    const { data, error } = await supabase
+    const client = await supabase()
+    const { data, error } = await client
       .from('portfolio_items')
       .insert(item)
       .select()
@@ -246,7 +260,8 @@ export class PortfolioService {
   }
 
   static async update(id: string, updates: Partial<PortfolioItemInsert>): Promise<PortfolioItem> {
-    const { data, error } = await supabase
+    const client = await supabase()
+    const { data, error } = await client
       .from('portfolio_items')
       .update(updates)
       .eq('id', id)
@@ -258,7 +273,8 @@ export class PortfolioService {
   }
 
   static async delete(id: string): Promise<void> {
-    const { error } = await supabase
+    const client = await supabase()
+    const { error } = await client
       .from('portfolio_items')
       .delete()
       .eq('id', id)
@@ -270,7 +286,8 @@ export class PortfolioService {
 // Tokens de MercadoPago
 export class MercadoPagoTokensService {
   static async getByUserId(userId: string): Promise<MercadoPagoToken | null> {
-    const { data, error } = await supabase
+    const client = await supabase()
+    const { data, error } = await client
       .from('mercado_pago_tokens')
       .select('*')
       .eq('user_id', userId)
@@ -281,7 +298,8 @@ export class MercadoPagoTokensService {
   }
 
   static async createOrUpdate(tokenData: MercadoPagoTokenInsert): Promise<MercadoPagoToken> {
-    const { data, error } = await supabase
+    const client = await supabase()
+    const { data, error } = await client
       .from('mercado_pago_tokens')
       .upsert(tokenData, { onConflict: 'user_id' })
       .select()
@@ -292,7 +310,8 @@ export class MercadoPagoTokensService {
   }
 
   static async deleteByUserId(userId: string): Promise<void> {
-    const { error } = await supabase
+    const client = await supabase()
+    const { error } = await client
       .from('mercado_pago_tokens')
       .delete()
       .eq('user_id', userId)

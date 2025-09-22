@@ -1,10 +1,10 @@
 import { supabase } from './supabase'
 import { Service, ServiceInsert, Reservation, ReservationInsert, PortfolioItem, PortfolioItemInsert, WorkingHours, WorkingHoursInsert } from './database.types'
 
-// Servicios existentes (ya funcionan)
 export class ServicesService {
   static async getAll(): Promise<Service[]> {
-    const { data, error } = await supabase
+    const client = await supabase()
+    const { data, error } = await client
       .from('services')
       .select('*')
       .eq('is_active', true)
@@ -15,7 +15,8 @@ export class ServicesService {
   }
 
   static async getAllForAdmin(): Promise<Service[]> {
-    const { data, error } = await supabase
+    const client = await supabase()
+    const { data, error } = await client
       .from('services')
       .select('*')
       .order('name')
@@ -25,7 +26,8 @@ export class ServicesService {
   }
 
   static async getById(id: string): Promise<Service | null> {
-    const { data, error } = await supabase
+    const client = await supabase()
+    const { data, error } = await client
       .from('services')
       .select('*')
       .eq('id', id)
@@ -36,7 +38,8 @@ export class ServicesService {
   }
 
   static async create(service: ServiceInsert): Promise<Service> {
-    const { data, error } = await supabase
+    const client = await supabase()
+    const { data, error } = await client
       .from('services')
       .insert(service)
       .select()
@@ -71,7 +74,8 @@ export class ServicesService {
 
   static async delete(id: string): Promise<void> {
     // Primero verificar si hay reservas que dependen de este servicio
-    const { data: reservations, error: checkError } = await supabase
+    const client = await supabase()
+    const { data: reservations, error: checkError } = await client
       .from('reservations')
       .select('id')
       .eq('service_id', id)
@@ -83,7 +87,8 @@ export class ServicesService {
     }
 
     // Si no hay reservas, proceder con la eliminación
-    const { error } = await supabase
+    const client2 = await supabase()
+    const { error } = await client2
       .from('services')
       .delete()
       .eq('id', id)
@@ -117,7 +122,8 @@ export class DashboardStatsService {
     const currentYear = new Date().getFullYear()
 
     // 1. Reservas Activas (pendientes desde hoy en adelante)
-    const { data: activeReservations, error: activeError } = await supabase
+    const client = await supabase()
+    const { data: activeReservations, error: activeError } = await client
       .from('reservations')
       .select('id')
       .eq('status', 'pending')
@@ -126,7 +132,8 @@ export class DashboardStatsService {
     if (activeError) throw activeError
 
     // 2. Servicios Activos
-    const { data: activeServices, error: servicesError } = await supabase
+    const client2 = await supabase()
+    const { data: activeServices, error: servicesError } = await client2
       .from('services')
       .select('id')
       .eq('is_active', true)
@@ -134,7 +141,8 @@ export class DashboardStatsService {
     if (servicesError) throw servicesError
 
     // 3. Clientes Únicos (por email)
-    const { data: uniqueCustomers, error: customersError } = await supabase
+    const client3 = await supabase()
+    const { data: uniqueCustomers, error: customersError } = await client3
       .from('reservations')
       .select('customer_email')
       .not('customer_email', 'is', null)
@@ -147,7 +155,8 @@ export class DashboardStatsService {
     )
 
     // 4. Ingresos del mes actual (solo reservas completadas)
-    const { data: completedReservations, error: revenueError } = await supabase
+    const client4 = await supabase()
+    const { data: completedReservations, error: revenueError } = await client4
       .from('reservations')
       .select('total_price, appointment_date')
       .eq('status', 'completed')
@@ -193,7 +202,8 @@ export class DashboardStatsService {
 // Servicio para configuración del sitio
 export class SiteConfigService {
   static async getAll(): Promise<any[]> {
-    const { data, error } = await supabase
+    const client = await supabase()
+    const { data, error } = await client
       .from('site_config')
       .select('*')
       .order('key')
@@ -203,7 +213,8 @@ export class SiteConfigService {
   }
 
   static async getByKey(key: string): Promise<any | null> {
-    const { data, error } = await supabase
+    const client = await supabase()
+    const { data, error } = await client
       .from('site_config')
       .select('*')
       .eq('key', key)
@@ -214,7 +225,8 @@ export class SiteConfigService {
   }
 
   static async updateConfig(key: string, value: string): Promise<any> {
-    const { data, error } = await supabase
+    const client = await supabase()
+    const { data, error } = await client
       .from('site_config')
       .upsert({ key, value, updated_at: new Date().toISOString() })
       .select()
@@ -248,7 +260,8 @@ function convertToJavaScriptDayOfWeek(argDay: number): number {
 // Servicio para horarios de trabajo
 export class WorkingHoursService {
   static async getAll(): Promise<WorkingHours[]> {
-    const { data, error } = await supabase
+    const client = await supabase()
+    const { data, error } = await client
       .from('working_hours')
       .select('*')
       .order('day_of_week')
@@ -258,7 +271,8 @@ export class WorkingHoursService {
   }
 
   static async getByDay(dayOfWeek: number): Promise<WorkingHours | null> {
-    const { data, error } = await supabase
+    const client = await supabase()
+    const { data, error } = await client
       .from('working_hours')
       .select('*')
       .eq('day_of_week', dayOfWeek)
@@ -271,7 +285,8 @@ export class WorkingHoursService {
   static async updateWorkingHours(dayOfWeek: number, isWorking: boolean, startTime?: string, endTime?: string): Promise<WorkingHours | null> {
     if (!isWorking) {
       // Si el día está desactivado, eliminar el registro
-      const { error } = await supabase
+      const client = await supabase()
+      const { error } = await client
         .from('working_hours')
         .delete()
         .eq('day_of_week', dayOfWeek)
@@ -284,7 +299,8 @@ export class WorkingHoursService {
       const dayName = dayNames[dayOfWeek]
 
       // Primero verificar si ya existe un registro para este día
-      const { data: existingRecord, error: selectError } = await supabase
+      const client = await supabase()
+      const { data: existingRecord, error: selectError } = await client
         .from('working_hours')
         .select('*')
         .eq('day_of_week', dayOfWeek)
@@ -297,7 +313,8 @@ export class WorkingHoursService {
 
       if (existingRecord) {
         // Si existe, actualizar el registro existente
-        const { data, error } = await supabase
+        const client = await supabase()
+    const { data, error } = await client
           .from('working_hours')
           .update({
             day_name: dayName,
@@ -323,7 +340,8 @@ export class WorkingHoursService {
           updated_at: new Date().toISOString()
         }
 
-        const { data, error } = await supabase
+        const client = await supabase()
+    const { data, error } = await client
           .from('working_hours')
           .insert(workingHoursData)
           .select()
@@ -376,7 +394,8 @@ export class TimeSlotsService {
           }
           
           // Obtener reservas existentes para la fecha
-          const { data: reservations, error: reservationsError } = await supabase
+          const client = await supabase()
+          const { data: reservations, error: reservationsError } = await client
             .from('reservations')
             .select(`
               appointment_time,
@@ -420,7 +439,8 @@ export class TimeSlotsService {
       const timeSlots = this.generateHourSlots(workingDay.start_time || '09:00', workingDay.end_time || '18:00')
       
       // Obtener reservas existentes para la fecha
-      const { data: reservations, error: reservationsError } = await supabase
+      const client2 = await supabase()
+      const { data: reservations, error: reservationsError } = await client2
         .from('reservations')
         .select(`
           appointment_time,
@@ -508,7 +528,8 @@ export class TimeSlotsService {
           }
           
           // Obtener reservas existentes para la fecha
-          const { data: reservations, error: reservationsError } = await supabase
+          const client = await supabase()
+          const { data: reservations, error: reservationsError } = await client
             .from('reservations')
             .select(`
               appointment_time,
@@ -553,7 +574,8 @@ export class TimeSlotsService {
       const timeSlots = this.generateHourSlots(workingDay.start_time || '09:00', workingDay.end_time || '18:00')
       
       // Obtener reservas existentes para la fecha
-      const { data: reservations, error: reservationsError } = await supabase
+      const client2 = await supabase()
+      const { data: reservations, error: reservationsError } = await client2
         .from('reservations')
         .select(`
           appointment_time,

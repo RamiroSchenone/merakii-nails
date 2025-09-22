@@ -178,13 +178,35 @@ export default function HomePage() {
             transition={{ duration: 0.6, delay: 0.2 }}
             viewport={{ once: true }}
           >
-            <Button variant="outline" size="lg" className="rounded-2xl bg-transparent">
-              <MessageCircle className="mr-2 h-5 w-5" />
-              WhatsApp
+            <Button 
+              variant="outline" 
+              size="lg" 
+              className="rounded-2xl bg-transparent hover:bg-green-50 hover:border-green-300 hover:text-green-700 transition-all duration-300"
+              asChild
+            >
+              <a 
+                href="https://wa.me/5493417458728?text=¡Hola!%20%20Me%20encantaría%20agendar%20una%20cita%20para%20darme%20un%20tratamiento%20de%20uñas.%20¿Podrías%20ayudarme%20con%20la%20disponibilidad?%20"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <MessageCircle className="mr-2 h-5 w-5" />
+                WhatsApp
+              </a>
             </Button>
-            <Button variant="outline" size="lg" className="rounded-2xl bg-transparent">
-              <Instagram className="mr-2 h-5 w-5" />
-              Instagram
+            <Button 
+              variant="outline" 
+              size="lg" 
+              className="rounded-2xl bg-transparent hover:bg-pink-50 hover:border-pink-300 hover:text-pink-700 transition-all duration-300"
+              asChild
+            >
+              <a 
+                href="https://www.instagram.com/merakiinails.iw/"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Instagram className="mr-2 h-5 w-5" />
+                Instagram
+              </a>
             </Button>
           </motion.div>
           <motion.p

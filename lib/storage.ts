@@ -1,4 +1,4 @@
-import { supabase } from './supabase'
+import { supabase, supabaseAdmin } from './supabase'
 
 // Configuración del bucket de portfolio
 const PORTFOLIO_BUCKET = 'portfolio-images'
@@ -20,7 +20,8 @@ export class StorageService {
       const finalFileName = fileName || `${Date.now()}-${file.name}`
       
       // Subir archivo
-      const { data, error } = await supabase.storage
+      const client = await supabase()
+      const { data, error } = await client.storage
         .from(PORTFOLIO_BUCKET)
         .upload(finalFileName, file, {
           cacheControl: '3600',
@@ -39,7 +40,8 @@ export class StorageService {
       console.log('✅ Archivo subido exitosamente:', data.path)
 
       // Obtener URL pública
-      const { data: urlData } = supabase.storage
+      const client2 = await supabase()
+      const { data: urlData } = client2.storage
         .from(PORTFOLIO_BUCKET)
         .getPublicUrl(data.path)
 
@@ -60,7 +62,8 @@ export class StorageService {
    */
   static async deletePortfolioImage(imagePath: string): Promise<void> {
     try {
-      const { error } = await supabase.storage
+      const client = await supabase()
+      const { error } = await client.storage
         .from(PORTFOLIO_BUCKET)
         .remove([imagePath])
 
@@ -76,8 +79,9 @@ export class StorageService {
   /**
    * Obtener URL pública de una imagen
    */
-  static getPublicUrl(imagePath: string): string {
-    const { data } = supabase.storage
+  static async getPublicUrl(imagePath: string): Promise<string> {
+    const client = await supabase()
+    const { data } = client.storage
       .from(PORTFOLIO_BUCKET)
       .getPublicUrl(imagePath)
     
@@ -89,7 +93,8 @@ export class StorageService {
    */
   static async listPortfolioImages(): Promise<Array<{ name: string; path: string; url: string }>> {
     try {
-      const { data, error } = await supabase.storage
+      const client = await supabase()
+      const { data, error } = await client.storage
         .from(PORTFOLIO_BUCKET)
         .list()
 
@@ -97,11 +102,15 @@ export class StorageService {
         throw new Error(`Error listando imágenes: ${error.message}`)
       }
 
-      return data.map(file => ({
-        name: file.name,
-        path: file.name,
-        url: this.getPublicUrl(file.name)
-      }))
+      const filesWithUrls = await Promise.all(
+        data.map(async file => ({
+          name: file.name,
+          path: file.name,
+          url: await this.getPublicUrl(file.name)
+        }))
+      )
+
+      return filesWithUrls
     } catch (error) {
       console.error('Error en StorageService.listPortfolioImages:', error)
       throw error
