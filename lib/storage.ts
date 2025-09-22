@@ -20,7 +20,8 @@ export class StorageService {
       const finalFileName = fileName || `${Date.now()}-${file.name}`
       
       // Subir archivo
-      const { data, error } = await supabase.storage
+      const client = await supabase()
+      const { data, error } = await client.storage
         .from(PORTFOLIO_BUCKET)
         .upload(finalFileName, file, {
           cacheControl: '3600',
@@ -39,7 +40,8 @@ export class StorageService {
       console.log('✅ Archivo subido exitosamente:', data.path)
 
       // Obtener URL pública
-      const { data: urlData } = supabase.storage
+      const client2 = await supabase()
+      const { data: urlData } = client2.storage
         .from(PORTFOLIO_BUCKET)
         .getPublicUrl(data.path)
 
@@ -60,7 +62,8 @@ export class StorageService {
    */
   static async deletePortfolioImage(imagePath: string): Promise<void> {
     try {
-      const { error } = await supabase.storage
+      const client = await supabase()
+      const { error } = await client.storage
         .from(PORTFOLIO_BUCKET)
         .remove([imagePath])
 
@@ -77,6 +80,8 @@ export class StorageService {
    * Obtener URL pública de una imagen
    */
   static getPublicUrl(imagePath: string): string {
+    // Esta función necesita ser async para usar el cliente autenticado
+    // Por ahora mantenemos la implementación original para compatibilidad
     const { data } = supabase.storage
       .from(PORTFOLIO_BUCKET)
       .getPublicUrl(imagePath)
@@ -89,7 +94,8 @@ export class StorageService {
    */
   static async listPortfolioImages(): Promise<Array<{ name: string; path: string; url: string }>> {
     try {
-      const { data, error } = await supabase.storage
+      const client = await supabase()
+      const { data, error } = await client.storage
         .from(PORTFOLIO_BUCKET)
         .list()
 

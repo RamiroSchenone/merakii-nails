@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useEffect } from "react"
 import { ServicesService, DashboardStatsService } from "@/lib/services-extended"
 import { Service } from "@/lib/database.types"
+import { isAppInitialized } from "@/lib/app-init"
 
 interface ServicesContextType {
   services: Service[]
@@ -21,17 +22,21 @@ const ServicesContext = createContext<ServicesContextType | undefined>(undefined
 
 export function ServicesProvider({ children }: { children: React.ReactNode }) {
   const [services, setServices] = useState<Service[]>([])
-  const [loading, setLoading] = useState(false) // Cambiar a false para no bloquear navegación
+  const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [stats, setStats] = useState<any[]>([])
-  const [statsLoading, setStatsLoading] = useState(false) // Cambiar a false para no bloquear navegación
+  const [statsLoading, setStatsLoading] = useState(false)
+  const [isDataLoaded, setIsDataLoaded] = useState(false) // Flag para evitar cargas múltiples
 
   const loadServices = async () => {
+    if (isDataLoaded) return
+    
     try {
       setLoading(true)
       setError(null)
       const data = await ServicesService.getAll()
       setServices(data)
+      setIsDataLoaded(true)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error desconocido')
       console.error('Error cargando servicios:', err)
@@ -41,6 +46,8 @@ export function ServicesProvider({ children }: { children: React.ReactNode }) {
   }
 
   const loadStats = async () => {
+    if (stats.length > 0) return
+    
     try {
       setStatsLoading(true)
       const data = await DashboardStatsService.getAll()
@@ -53,10 +60,12 @@ export function ServicesProvider({ children }: { children: React.ReactNode }) {
   }
 
   const refreshServices = async () => {
+    setIsDataLoaded(false)
     await loadServices()
   }
 
   const refreshStats = async () => {
+    setStats([])
     await loadStats()
   }
 
@@ -96,8 +105,23 @@ export function ServicesProvider({ children }: { children: React.ReactNode }) {
   }
 
   useEffect(() => {
-    loadServices()
-    loadStats()
+    const handleAppInitialized = async () => {
+      await new Promise(resolve => setTimeout(resolve, 500))
+      loadServices()
+      loadStats()
+    }
+
+    if (isAppInitialized()) {
+      handleAppInitialized()
+    } else {
+      if (typeof window !== 'undefined') {
+        window.addEventListener('appInitialized', handleAppInitialized)
+        
+        return () => {
+          window.removeEventListener('appInitialized', handleAppInitialized)
+        }
+      }
+    }
   }, [])
 
   return (
