@@ -79,10 +79,9 @@ export class StorageService {
   /**
    * Obtener URL pública de una imagen
    */
-  static getPublicUrl(imagePath: string): string {
-    // Esta función necesita ser async para usar el cliente autenticado
-    // Por ahora mantenemos la implementación original para compatibilidad
-    const { data } = supabaseAdmin.storage
+  static async getPublicUrl(imagePath: string): Promise<string> {
+    const client = await supabase()
+    const { data } = client.storage
       .from(PORTFOLIO_BUCKET)
       .getPublicUrl(imagePath)
     
@@ -103,11 +102,15 @@ export class StorageService {
         throw new Error(`Error listando imágenes: ${error.message}`)
       }
 
-      return data.map(file => ({
-        name: file.name,
-        path: file.name,
-        url: this.getPublicUrl(file.name)
-      }))
+      const filesWithUrls = await Promise.all(
+        data.map(async file => ({
+          name: file.name,
+          path: file.name,
+          url: await this.getPublicUrl(file.name)
+        }))
+      )
+
+      return filesWithUrls
     } catch (error) {
       console.error('Error en StorageService.listPortfolioImages:', error)
       throw error
