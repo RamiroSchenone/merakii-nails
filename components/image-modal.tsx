@@ -6,21 +6,15 @@ import { Badge } from "@/components/ui/badge"
 import NextImage from "next/image"
 import { X } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
-
-interface PortfolioItem {
-  id: number
-  title: string
-  description: string
-  imageUrl: string
-  tags: string[]
-}
+import { PortfolioItem as DatabasePortfolioItem } from "@/lib/database.types"
 
 interface ImageModalProps {
-  item: PortfolioItem
+  item: DatabasePortfolioItem
   onClose: () => void
+  isOpen: boolean
 }
 
-export function ImageModal({ item, onClose }: ImageModalProps) {
+export function ImageModal({ item, onClose, isOpen }: ImageModalProps) {
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
@@ -72,7 +66,7 @@ export function ImageModal({ item, onClose }: ImageModalProps) {
               transition={{ duration: 0.5, delay: 0.2 }}
             >
               <NextImage 
-                src={item.imageUrl || "/placeholder.svg"} 
+                src={item.image_url || "/placeholder.svg"} 
                 alt={item.title} 
                 fill
                 className="object-cover"

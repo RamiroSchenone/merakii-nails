@@ -3,7 +3,6 @@ const nextConfig = {
   // Optimizaciones de performance
   experimental: {
     optimizePackageImports: ['framer-motion', 'lucide-react'],
-    optimizeCss: true,
     scrollRestoration: true,
   },
   
