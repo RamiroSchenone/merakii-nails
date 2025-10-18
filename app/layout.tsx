@@ -4,7 +4,7 @@ import { GeistSans } from "geist/font/sans"
 import { GeistMono } from "geist/font/mono"
 import { Navigation } from "@/components/navigation"
 import { ServicesProvider } from "@/contexts/services-context"
-import { AppInitializer } from "@/components/app-initializer"
+import { ToastProvider } from "@/components/toast-provider"
 import "./globals.css"
 
 export const metadata: Metadata = {
@@ -21,14 +21,13 @@ export default function RootLayout({
   return (
     <html lang="es" suppressHydrationWarning>
       <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable}`} suppressHydrationWarning>
-        <AppInitializer>
-          <ServicesProvider>
-            <Navigation />
-            <main className="pt-16">
-              {children}
-            </main>
-          </ServicesProvider>
-        </AppInitializer>
+        <ServicesProvider>
+          <Navigation />
+          <main className="pt-16">
+            {children}
+          </main>
+          <ToastProvider />
+        </ServicesProvider>
       </body>
     </html>
   )

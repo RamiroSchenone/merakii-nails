@@ -220,7 +220,13 @@ export function ServicesManagementAdmin() {
                       {service.is_active ? "Activo" : "Inactivo"}
                     </Badge>
                   </div>
-                  <CardDescription className="line-clamp-2">
+                  <CardDescription className="overflow-hidden" style={{
+                    display: '-webkit-box',
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: 'vertical',
+                    lineHeight: '1.4',
+                    maxHeight: '2.8em'
+                  }}>
                     {service.description}
                   </CardDescription>
                 </CardHeader>

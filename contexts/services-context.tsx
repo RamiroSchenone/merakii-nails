@@ -105,23 +105,16 @@ export function ServicesProvider({ children }: { children: React.ReactNode }) {
   }
 
   useEffect(() => {
-    const handleAppInitialized = async () => {
-      await new Promise(resolve => setTimeout(resolve, 500))
-      loadServices()
-      loadStats()
+    // Cargar servicios inmediatamente sin esperar inicialización
+    const loadData = async () => {
+      // Pequeño delay para no bloquear el render inicial
+      setTimeout(() => {
+        loadServices()
+        loadStats()
+      }, 100)
     }
 
-    if (isAppInitialized()) {
-      handleAppInitialized()
-    } else {
-      if (typeof window !== 'undefined') {
-        window.addEventListener('appInitialized', handleAppInitialized)
-        
-        return () => {
-          window.removeEventListener('appInitialized', handleAppInitialized)
-        }
-      }
-    }
+    loadData()
   }, [])
 
   return (

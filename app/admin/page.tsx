@@ -1,24 +1,103 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { ReservationsGridAdmin, ServicesManagementAdmin, PortfolioManagementAdmin, WorkingHoursConfig } from "@/components/lazy-components"
 import { AdminAuth } from "@/components/admin-auth"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Settings, CalendarDays, Clock, Users, DollarSign, Image as ImageIcon } from "lucide-react"
+import { Settings, CalendarDays, Clock, Users, DollarSign, Image as ImageIcon, LogOut } from "lucide-react"
 import { useDashboardStats } from "@/hooks/use-services"
+import { AnimatedOnScroll, HoverCard, fadeInUp } from "@/components/animated-elements"
+import dynamic from "next/dynamic"
+
+// Lazy load components con skeletons optimizados
+const ReservationsGridAdmin = dynamic(
+  () => import("@/components/reservations-grid-admin").then(mod => ({ default: mod.ReservationsGridAdmin })),
+  { 
+    ssr: false,
+    loading: () => (
+      <div className="space-y-4">
+        <div className="h-8 w-48 bg-muted animate-pulse rounded"></div>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className="h-32 bg-muted animate-pulse rounded-lg"></div>
+          ))}
+        </div>
+      </div>
+    )
+  }
+)
+
+const ServicesManagementAdmin = dynamic(
+  () => import("@/components/services-management-admin").then(mod => ({ default: mod.ServicesManagementAdmin })),
+  { 
+    ssr: false,
+    loading: () => (
+      <div className="space-y-4">
+        <div className="h-8 w-48 bg-muted animate-pulse rounded"></div>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="h-48 bg-muted animate-pulse rounded-lg"></div>
+          ))}
+        </div>
+      </div>
+    )
+  }
+)
+
+const PortfolioManagementAdmin = dynamic(
+  () => import("@/components/portfolio-management-admin").then(mod => ({ default: mod.PortfolioManagementAdmin })),
+  { 
+    ssr: false,
+    loading: () => (
+      <div className="space-y-4">
+        <div className="h-8 w-48 bg-muted animate-pulse rounded"></div>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className="h-48 bg-muted animate-pulse rounded-lg"></div>
+          ))}
+        </div>
+      </div>
+    )
+  }
+)
+
+const WorkingHoursConfig = dynamic(
+  () => import("@/components/working-hours-config").then(mod => ({ default: mod.WorkingHoursConfig })),
+  { 
+    ssr: false,
+    loading: () => (
+      <div className="space-y-4">
+        <div className="h-8 w-48 bg-muted animate-pulse rounded"></div>
+        <div className="space-y-4">
+          {[...Array(7)].map((_, i) => (
+            <div key={i} className="h-16 bg-muted animate-pulse rounded-lg"></div>
+          ))}
+        </div>
+      </div>
+    )
+  }
+)
 
 export default function AdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [activeTab, setActiveTab] = useState<'reservations' | 'services' | 'portfolio' | 'config'>('reservations')
+  const [isLoading, setIsLoading] = useState(true)
   const { stats, statsLoading } = useDashboardStats()
 
   // Verificar autenticación al cargar la página
   useEffect(() => {
-    const adminSession = localStorage.getItem('admin_authenticated')
-    if (adminSession === 'true') {
-      setIsAuthenticated(true)
+    const checkAuth = async () => {
+      // Pequeño delay para mostrar la página inmediatamente
+      await new Promise(resolve => setTimeout(resolve, 100))
+      
+      const adminSession = localStorage.getItem('admin_authenticated')
+      if (adminSession === 'true') {
+        setIsAuthenticated(true)
+      }
+      setIsLoading(false)
     }
+    
+    checkAuth()
   }, [])
 
   const handleAuthSuccess = () => {
@@ -29,6 +108,15 @@ export default function AdminPage() {
   const handleLogout = () => {
     localStorage.removeItem('admin_authenticated')
     setIsAuthenticated(false)
+  }
+
+  // Mostrar loading inicial muy breve
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    )
   }
 
   // Si no está autenticado, mostrar el formulario de login
@@ -47,147 +135,160 @@ export default function AdminPage() {
     return `$${priceInPesos.toLocaleString('es-AR')}`
   }
 
+  const tabs = [
+    { id: 'reservations', label: 'Reservas', icon: CalendarDays },
+    { id: 'services', label: 'Servicios', icon: Settings },
+    { id: 'portfolio', label: 'Portfolio', icon: ImageIcon },
+    { id: 'config', label: 'Horarios', icon: Clock }
+  ] as const
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="border-b border-border px-4 py-6">
-        <div className="mx-auto max-w-7xl">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <a 
-                href="/"
-                className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-              >
-                ← Volver al inicio
-              </a>
+      <AnimatedOnScroll animation={fadeInUp} delay={0.1}>
+        <div className="bg-card border-b border-border">
+          <div className="max-w-7xl mx-auto px-4 py-6">
+            <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-2xl font-bold text-foreground">Panel de Administración</h1>
-                <p className="text-muted">Gestiona tu estudio de uñas</p>
+                <h1 className="text-3xl font-bold text-foreground">Panel de Administración</h1>
+                <p className="text-muted-foreground mt-1">Gestiona tu negocio de uñas</p>
               </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <div 
-                className={`px-3 py-2 rounded-xl border text-sm font-medium flex items-center gap-2 ${
-                  activeTab === 'config' 
-                    ? 'bg-primary text-primary-foreground border-primary' 
-                    : 'bg-transparent border-border text-muted-foreground'
-                }`}
-              >
-                <Settings className="h-4 w-4" />
-                Configuración
-              </div>
-              <Button 
-                variant="destructive" 
-                size="sm" 
-                className="rounded-xl"
-                onClick={handleLogout}
-              >
-                Cerrar Sesión
-              </Button>
+              <HoverCard scale={1.05}>
+                <Button 
+                  onClick={handleLogout} 
+                  variant="outline" 
+                  className="hover:bg-destructive hover:text-destructive-foreground transition-colors duration-300"
+                >
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Cerrar Sesión
+                </Button>
+              </HoverCard>
             </div>
           </div>
         </div>
-      </header>
+      </AnimatedOnScroll>
 
-      {/* Dashboard Stats */}
-      <div className="px-4 py-6">
-        <div className="mx-auto max-w-7xl">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Reservas Activas</CardTitle>
-                <CalendarDays className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {statsLoading ? "..." : getStatValue('reservations_today')}
-                </div>
-                <p className="text-xs text-muted-foreground">Pendientes</p>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Servicios Activos</CardTitle>
-                <Clock className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {statsLoading ? "..." : getStatValue('active_services')}
-                </div>
-                <p className="text-xs text-muted-foreground">Disponibles</p>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Clientes</CardTitle>
-                <Users className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {statsLoading ? "..." : getStatValue('total_customers')}
-                </div>
-                <p className="text-xs text-muted-foreground">Únicos</p>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Ingresos</CardTitle>
-                <DollarSign className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {statsLoading ? "..." : formatPrice(getStatValue('monthly_revenue'))}
-                </div>
-                <p className="text-xs text-muted-foreground">Este mes</p>
-              </CardContent>
-            </Card>
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        {/* Stats Cards */}
+        <AnimatedOnScroll animation={fadeInUp} delay={0.2}>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <HoverCard scale={1.02} shadow={true}>
+              <Card className="hover:shadow-lg transition-shadow duration-300">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">
+                    Reservas Pendientes
+                  </CardTitle>
+                  <CalendarDays className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-foreground">
+                    {statsLoading ? (
+                      <div className="h-8 w-16 bg-muted animate-pulse rounded"></div>
+                    ) : (
+                      getStatValue('pending_reservations')
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </HoverCard>
+
+            <HoverCard scale={1.02} shadow={true}>
+              <Card className="hover:shadow-lg transition-shadow duration-300">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">
+                    Reservas Confirmadas
+                  </CardTitle>
+                  <Users className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-foreground">
+                    {statsLoading ? (
+                      <div className="h-8 w-16 bg-muted animate-pulse rounded"></div>
+                    ) : (
+                      getStatValue('confirmed_reservations')
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </HoverCard>
+
+            <HoverCard scale={1.02} shadow={true}>
+              <Card className="hover:shadow-lg transition-shadow duration-300">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">
+                    Ingresos del Mes
+                  </CardTitle>
+                  <DollarSign className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-foreground">
+                    {statsLoading ? (
+                      <div className="h-8 w-20 bg-muted animate-pulse rounded"></div>
+                    ) : (
+                      formatPrice(getStatValue('monthly_revenue'))
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </HoverCard>
+
+            <HoverCard scale={1.02} shadow={true}>
+              <Card className="hover:shadow-lg transition-shadow duration-300">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">
+                    Servicios Activos
+                  </CardTitle>
+                  <Settings className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-foreground">
+                    {statsLoading ? (
+                      <div className="h-8 w-16 bg-muted animate-pulse rounded"></div>
+                    ) : (
+                      getStatValue('active_services')
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </HoverCard>
           </div>
+        </AnimatedOnScroll>
 
-          {/* Tabs - Responsive */}
-          <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-1 mb-6">
-            <Button
-              variant={activeTab === 'reservations' ? 'default' : 'outline'}
-              onClick={() => setActiveTab('reservations')}
-              className="rounded-xl w-full sm:w-auto"
-            >
-              <CalendarDays className="h-4 w-4 mr-2" />
-              Reservas
-            </Button>
-            <Button
-              variant={activeTab === 'services' ? 'default' : 'outline'}
-              onClick={() => setActiveTab('services')}
-              className="rounded-xl w-full sm:w-auto"
-            >
-              <Clock className="h-4 w-4 mr-2" />
-              Servicios
-            </Button>
-            <Button
-              variant={activeTab === 'portfolio' ? 'default' : 'outline'}
-              onClick={() => setActiveTab('portfolio')}
-              className="rounded-xl w-full sm:w-auto"
-            >
-              <ImageIcon className="h-4 w-4 mr-2" />
-              Mis Trabajos
-            </Button>
-            <Button
-              variant={activeTab === 'config' ? 'default' : 'outline'}
-              onClick={() => setActiveTab('config')}
-              className="rounded-xl w-full sm:w-auto"
-            >
-              <Settings className="h-4 w-4 mr-2" />
-              Horarios Laborales
-            </Button>
+        {/* Navigation Tabs */}
+        <AnimatedOnScroll animation={fadeInUp} delay={0.3}>
+          <div className="mb-8">
+            <div className="flex flex-wrap gap-2">
+              {tabs.map((tab, index) => (
+                <AnimatedOnScroll key={tab.id} animation={fadeInUp} delay={0.4 + index * 0.1}>
+                  <HoverCard scale={1.05}>
+                    <Button
+                      variant={activeTab === tab.id ? 'default' : 'outline'}
+                      onClick={() => setActiveTab(tab.id)}
+                      className={`rounded-xl w-full sm:w-auto transition-all duration-300 ${
+                        activeTab === tab.id 
+                          ? 'shadow-lg scale-105' 
+                          : 'hover:shadow-md hover:scale-105'
+                      }`}
+                    >
+                      <tab.icon className="h-4 w-4 mr-2" />
+                      {tab.label}
+                    </Button>
+                  </HoverCard>
+                </AnimatedOnScroll>
+              ))}
+            </div>
           </div>
+        </AnimatedOnScroll>
 
-          {/* Tab Content */}
-          {activeTab === 'reservations' && <ReservationsGridAdmin />}
-          {activeTab === 'services' && <ServicesManagementAdmin />}
-          {activeTab === 'portfolio' && <PortfolioManagementAdmin />}
-          {activeTab === 'config' && <WorkingHoursConfig />}
-        </div>
+        {/* Tab Content */}
+        <AnimatedOnScroll animation={fadeInUp} delay={0.5}>
+          <div className="min-h-[400px]">
+            {activeTab === 'reservations' && <ReservationsGridAdmin />}
+            {activeTab === 'services' && <ServicesManagementAdmin />}
+            {activeTab === 'portfolio' && <PortfolioManagementAdmin />}
+            {activeTab === 'config' && <WorkingHoursConfig />}
+          </div>
+        </AnimatedOnScroll>
       </div>
     </div>
   )
