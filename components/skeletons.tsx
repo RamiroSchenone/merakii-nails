@@ -1,5 +1,6 @@
 "use client"
 
+import { LoadingSpinner } from "@/components/animated-elements"
 import { cn } from "@/lib/utils"
 
 // Skeleton base
@@ -87,21 +88,32 @@ export function PortfolioGridSkeleton() {
   return (
     <div className="space-y-8">
       {/* Filtros */}
-      <div className="flex flex-wrap gap-2">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <Skeleton key={i} className="h-8 w-20" />
+      <div className="flex flex-wrap gap-2 justify-center">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <Skeleton key={i} className="h-8 w-24 rounded-full" />
         ))}
       </div>
       
       {/* Grid de imágenes */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="space-y-3">
-            <Skeleton className="h-64 w-full rounded-lg" />
-            <div className="space-y-2">
-              <Skeleton className="h-5 w-3/4" />
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-4 w-2/3" />
+          <div key={i} className="group relative overflow-hidden rounded-lg bg-card border border-border">
+            {/* Imagen skeleton */}
+            <div className="relative w-full h-64">
+              <Skeleton className="h-full w-full rounded-lg" />
+              {/* Overlay skeleton */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                <div className="absolute bottom-4 left-4 right-4 space-y-2">
+                  <Skeleton className="h-5 w-3/4 bg-white/20" />
+                  <Skeleton className="h-4 w-full bg-white/20" />
+                  <Skeleton className="h-4 w-2/3 bg-white/20" />
+                </div>
+              </div>
+            </div>
+            
+            {/* Badge skeleton */}
+            <div className="absolute top-2 right-2">
+              <Skeleton className="h-6 w-16 rounded-full" />
             </div>
           </div>
         ))}
@@ -109,7 +121,7 @@ export function PortfolioGridSkeleton() {
       
       {/* Botón Load More */}
       <div className="flex justify-center">
-        <Skeleton className="h-10 w-32" />
+        <Skeleton className="h-10 w-32 rounded-lg" />
       </div>
     </div>
   )

@@ -121,38 +121,32 @@ export class DashboardStatsService {
     const currentMonth = new Date().getMonth() + 1
     const currentYear = new Date().getFullYear()
 
-    // 1. Reservas Activas (pendientes desde hoy en adelante)
+    // 1. Reservas Pendientes (todas las pendientes)
     const client = await supabase()
-    const { data: activeReservations, error: activeError } = await client
+    const { data: pendingReservations, error: pendingError } = await client
       .from('reservations')
       .select('id')
       .eq('status', 'pending')
-      .gte('appointment_date', today)
 
-    if (activeError) throw activeError
+    if (pendingError) throw pendingError
 
-    // 2. Servicios Activos
+    // 2. Reservas Confirmadas (todas las confirmadas)
     const client2 = await supabase()
-    const { data: activeServices, error: servicesError } = await client2
+    const { data: confirmedReservations, error: confirmedError } = await client2
+      .from('reservations')
+      .select('id')
+      .eq('status', 'confirmed')
+
+    if (confirmedError) throw confirmedError
+
+    // 3. Servicios Activos
+    const client3 = await supabase()
+    const { data: activeServices, error: servicesError } = await client3
       .from('services')
       .select('id')
       .eq('is_active', true)
 
     if (servicesError) throw servicesError
-
-    // 3. Clientes Únicos (por email)
-    const client3 = await supabase()
-    const { data: uniqueCustomers, error: customersError } = await client3
-      .from('reservations')
-      .select('customer_email')
-      .not('customer_email', 'is', null)
-
-    if (customersError) throw customersError
-
-    // Contar clientes únicos por email
-    const uniqueCustomerEmails = new Set(
-      uniqueCustomers?.map(customer => customer.customer_email.trim().toLowerCase()) || []
-    )
 
     // 4. Ingresos del mes actual (solo reservas completadas)
     const client4 = await supabase()
@@ -172,21 +166,21 @@ export class DashboardStatsService {
 
     return [
       {
-        stat_key: 'reservations_today',
-        stat_value: activeReservations?.length || 0,
-        stat_name: 'Reservas Activas',
+        stat_key: 'pending_reservations',
+        stat_value: pendingReservations?.length || 0,
+        stat_name: 'Reservas Pendientes',
+        last_updated: new Date().toISOString()
+      },
+      {
+        stat_key: 'confirmed_reservations',
+        stat_value: confirmedReservations?.length || 0,
+        stat_name: 'Reservas Confirmadas',
         last_updated: new Date().toISOString()
       },
       {
         stat_key: 'active_services',
         stat_value: activeServices?.length || 0,
         stat_name: 'Servicios Activos',
-        last_updated: new Date().toISOString()
-      },
-      {
-        stat_key: 'total_customers',
-        stat_value: uniqueCustomerEmails.size,
-        stat_name: 'Clientes Únicos',
         last_updated: new Date().toISOString()
       },
       {
@@ -435,8 +429,12 @@ export class TimeSlotsService {
         return []
       }
       
-      // Generar horarios de 1 hora
-      const timeSlots = this.generateHourSlots(workingDay.start_time || '09:00', workingDay.end_time || '18:00')
+      // Generar horarios basados en la duración del servicio
+      const timeSlots = this.generateServiceSlots(
+        workingDay.start_time || '09:00', 
+        workingDay.end_time || '18:00',
+        serviceDuration || 60
+      )
       
       // Obtener reservas existentes para la fecha
       const client2 = await supabase()
@@ -453,18 +451,27 @@ export class TimeSlotsService {
         console.error('Error obteniendo reservas:', reservationsError)
       }
       
-      // Crear conjunto de horarios ocupados
+      // Crear conjunto de horarios ocupados con duración real
       const occupiedTimes = new Set<string>()
       
       if (reservations && reservations.length > 0) {
         reservations.forEach(reservation => {
-          const serviceDuration = (reservation.services as any)?.duration || 60
-          const slotsNeeded = Math.ceil(serviceDuration / 60)
+          const reservationDuration = (reservation.services as any)?.duration || 60
+          const startTime = reservation.appointment_time
           
-          // Bloquear todos los slots necesarios
-          for (let i = 0; i < slotsNeeded; i++) {
-            const slotTime = this.addHoursToTime(reservation.appointment_time, i)
-            occupiedTimes.add(slotTime)
+          // Agregar el horario de inicio de la reserva
+          occupiedTimes.add(startTime)
+          
+          // Si la reserva dura más de 1 hora, agregar horarios intermedios
+          if (reservationDuration > 60) {
+            const startMinutes = this.timeToMinutes(startTime)
+            const endMinutes = startMinutes + reservationDuration
+            
+            // Agregar cada hora completa ocupada
+            for (let minutes = startMinutes + 60; minutes < endMinutes; minutes += 60) {
+              const slotTime = this.minutesToTime(minutes)
+              occupiedTimes.add(slotTime)
+            }
           }
         })
       }
@@ -570,8 +577,12 @@ export class TimeSlotsService {
         return { slots: [], isLoading: false }
       }
       
-      // Generar horarios de 1 hora
-      const timeSlots = this.generateHourSlots(workingDay.start_time || '09:00', workingDay.end_time || '18:00')
+      // Generar horarios basados en la duración del servicio
+      const timeSlots = this.generateServiceSlots(
+        workingDay.start_time || '09:00', 
+        workingDay.end_time || '18:00',
+        serviceDuration || 60
+      )
       
       // Obtener reservas existentes para la fecha
       const client2 = await supabase()
@@ -588,18 +599,27 @@ export class TimeSlotsService {
         console.error('Error obteniendo reservas:', reservationsError)
       }
       
-      // Crear conjunto de horarios ocupados
+      // Crear conjunto de horarios ocupados con duración real
       const occupiedTimes = new Set<string>()
       
       if (reservations && reservations.length > 0) {
         reservations.forEach(reservation => {
-          const serviceDuration = (reservation.services as any)?.duration || 60
-          const slotsNeeded = Math.ceil(serviceDuration / 60)
+          const reservationDuration = (reservation.services as any)?.duration || 60
+          const startTime = reservation.appointment_time
           
-          // Bloquear todos los slots necesarios
-          for (let i = 0; i < slotsNeeded; i++) {
-            const slotTime = this.addHoursToTime(reservation.appointment_time, i)
-            occupiedTimes.add(slotTime)
+          // Agregar el horario de inicio de la reserva
+          occupiedTimes.add(startTime)
+          
+          // Si la reserva dura más de 1 hora, agregar horarios intermedios
+          if (reservationDuration > 60) {
+            const startMinutes = this.timeToMinutes(startTime)
+            const endMinutes = startMinutes + reservationDuration
+            
+            // Agregar cada hora completa ocupada
+            for (let minutes = startMinutes + 60; minutes < endMinutes; minutes += 60) {
+              const slotTime = this.minutesToTime(minutes)
+              occupiedTimes.add(slotTime)
+            }
           }
         })
       }
@@ -641,17 +661,22 @@ export class TimeSlotsService {
     }
   }
 
-  private static generateHourSlots(startTime: string, endTime: string): string[] {
+  private static generateServiceSlots(startTime: string, endTime: string, serviceDuration: number): string[] {
     const slots: string[] = []
     const startMinutes = this.timeToMinutes(startTime)
     const endMinutes = this.timeToMinutes(endTime)
     
-    // Generar turnos de 1 hora (60 minutos)
-    for (let minutes = startMinutes; minutes < endMinutes; minutes += 60) {
+    // Generar turnos basados en la duración del servicio
+    for (let minutes = startMinutes; minutes + serviceDuration <= endMinutes; minutes += serviceDuration) {
       slots.push(this.minutesToTime(minutes))
     }
     
     return slots
+  }
+
+  // Método legacy para compatibilidad
+  private static generateHourSlots(startTime: string, endTime: string): string[] {
+    return this.generateServiceSlots(startTime, endTime, 60)
   }
 
   private static addHoursToTime(time: string, hoursToAdd: number): string {
@@ -675,7 +700,7 @@ export class TimeSlotsService {
    * Verifica si un slot está disponible considerando la duración del servicio
    * Un slot está ocupado si:
    * 1. El slot mismo está ocupado, O
-   * 2. No hay suficientes slots consecutivos disponibles para la duración del servicio
+   * 2. Hay conflicto de horarios con reservas existentes
    */
   private static isSlotUnavailable(
     startTime: string, 
@@ -688,34 +713,27 @@ export class TimeSlotsService {
       return occupiedTimes.has(startTime)
     }
 
-    // Calcular cuántos slots consecutivos necesita el servicio
-    const slotsNeeded = Math.ceil(serviceDuration / 60)
-    
-    // Si solo necesita 1 slot, verificar si está ocupado
-    if (slotsNeeded <= 1) {
-      return occupiedTimes.has(startTime)
+    // Verificar si el slot de inicio está ocupado
+    if (occupiedTimes.has(startTime)) {
+      return true
     }
 
-    // Para servicios de múltiples horas, verificar disponibilidad consecutiva
-    const startIndex = allSlots.indexOf(startTime)
-    if (startIndex === -1) {
-      return true // Slot no existe
-    }
+    // Verificar conflictos de tiempo con reservas existentes
+    const startMinutes = this.timeToMinutes(startTime)
+    const endMinutes = startMinutes + serviceDuration
 
-    // Verificar que hay suficientes slots después de este
-    if (startIndex + slotsNeeded > allSlots.length) {
-      return true // No hay suficientes slots consecutivos
-    }
-
-    // Verificar que todos los slots necesarios estén disponibles
-    for (let i = 0; i < slotsNeeded; i++) {
-      const slotTime = allSlots[startIndex + i]
-      if (occupiedTimes.has(slotTime)) {
-        return true // Al menos uno de los slots necesarios está ocupado
+    // Verificar si hay algún slot ocupado que se superponga con este servicio
+    for (const occupiedTime of occupiedTimes) {
+      const occupiedStartMinutes = this.timeToMinutes(occupiedTime)
+      const occupiedEndMinutes = occupiedStartMinutes + 60 // Las reservas existentes son de 1 hora
+      
+      // Verificar superposición: si los intervalos se superponen
+      if (startMinutes < occupiedEndMinutes && endMinutes > occupiedStartMinutes) {
+        return true
       }
     }
 
-    return false // Todos los slots necesarios están disponibles
+    return false
   }
 }
 

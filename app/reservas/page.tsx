@@ -4,7 +4,7 @@ import { BookingFormSkeleton } from "@/components/skeletons"
 
 // Lazy load del componente pesado
 const BookingFormSupabase = dynamic(
-  () => import("@/components/booking-form-supabase").then(mod => ({ default: mod.BookingFormSupabase })),
+  () => import("@/components/booking-form-supabase-animated").then(mod => ({ default: mod.BookingFormSupabaseAnimated })),
   { 
     ssr: false,
     loading: () => <BookingFormSkeleton />

@@ -4,7 +4,7 @@ import { PortfolioGridSkeleton } from "@/components/skeletons"
 
 // Lazy load del componente pesado
 const PortfolioGridSupabase = dynamic(
-  () => import("@/components/portfolio-grid-supabase").then(mod => ({ default: mod.PortfolioGridSupabase })),
+  () => import("@/components/portfolio-grid-supabase-lazy").then(mod => ({ default: mod.PortfolioGridSupabaseLazy })),
   { 
     ssr: false,
     loading: () => <PortfolioGridSkeleton />

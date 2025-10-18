@@ -3,6 +3,7 @@
 import { useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import NextImage from "next/image"
 import { X } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 
@@ -70,7 +71,14 @@ export function ImageModal({ item, onClose }: ImageModalProps) {
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.5, delay: 0.2 }}
             >
-              <img src={item.imageUrl || "/placeholder.svg"} alt={item.title} className="h-full w-full object-cover" />
+              <NextImage 
+                src={item.imageUrl || "/placeholder.svg"} 
+                alt={item.title} 
+                fill
+                className="object-cover"
+                sizes="(max-width: 768px) 100vw, 50vw"
+                priority
+              />
             </motion.div>
 
             {/* Content */}

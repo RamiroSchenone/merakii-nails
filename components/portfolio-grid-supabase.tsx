@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { PortfolioService } from "@/lib/services"
@@ -106,11 +107,15 @@ export function PortfolioGridSupabase() {
               className="relative group cursor-pointer rounded-xl overflow-hidden shadow-lg border border-border"
               onClick={() => openImageModal(item)}
             >
-              <img
-                src={item.image_url || "/placeholder.svg"}
-                alt={item.title}
-                className="w-full h-64 object-cover transition-transform duration-300 group-hover:scale-105"
-              />
+              <div className="relative w-full h-64">
+                <Image
+                  src={item.image_url || "/placeholder.svg"}
+                  alt={item.title}
+                  fill
+                  className="object-cover transition-transform duration-300 group-hover:scale-105"
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                />
+              </div>
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent flex items-end p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                 <div>
                   <h3 className="text-xl font-semibold text-white">{item.title}</h3>
