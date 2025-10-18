@@ -50,7 +50,11 @@ export function PortfolioGridSupabaseLazy() {
           if (entry.isIntersecting) {
             const itemId = entry.target.getAttribute('data-item-id')
             if (itemId) {
-              setVisibleImages(prev => new Set([...prev, itemId]))
+              setVisibleImages(prev => {
+                const newSet = new Set(prev)
+                newSet.add(itemId)
+                return newSet
+              })
             }
           }
         })
@@ -67,7 +71,11 @@ export function PortfolioGridSupabaseLazy() {
 
   // Manejar carga de imágenes individuales
   const handleImageLoad = (itemId: string) => {
-    setImagesLoaded(prev => new Set([...prev, itemId]))
+    setImagesLoaded(prev => {
+      const newSet = new Set(prev)
+      newSet.add(itemId)
+      return newSet
+    })
   }
 
   const allTags = Array.from(new Set(portfolioItems.flatMap((item) => item.tags)))

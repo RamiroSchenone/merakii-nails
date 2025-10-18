@@ -723,7 +723,7 @@ export class TimeSlotsService {
     const endMinutes = startMinutes + serviceDuration
 
     // Verificar si hay algún slot ocupado que se superponga con este servicio
-    for (const occupiedTime of occupiedTimes) {
+    for (const occupiedTime of Array.from(occupiedTimes)) {
       const occupiedStartMinutes = this.timeToMinutes(occupiedTime)
       const occupiedEndMinutes = occupiedStartMinutes + 60 // Las reservas existentes son de 1 hora
       

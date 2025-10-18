@@ -34,7 +34,7 @@ interface BookingData {
 export function BookingFormSupabaseAnimated() {
   const { services, loading: loadingServices } = useServices()
   const { refreshStats } = useDashboardStats()
-  const { workingHours } = useWorkingHours()
+  const { workingDays, getWorkingDaysArray } = useWorkingHours()
   
   const [currentStep, setCurrentStep] = useState(1)
   const [bookingData, setBookingData] = useState<BookingData>({})
@@ -74,9 +74,11 @@ export function BookingFormSupabaseAnimated() {
     setCurrentStep(2)
   }
 
-  const handleDateSelect = (date: Date) => {
-    setBookingData((prev) => ({ ...prev, date }))
-    setCurrentStep(3)
+  const handleDateSelect = (date: Date | undefined) => {
+    if (date) {
+      setBookingData((prev) => ({ ...prev, date }))
+      setCurrentStep(3)
+    }
   }
 
   const handleTimeSelect = (time: string) => {
@@ -276,8 +278,7 @@ export function BookingFormSupabaseAnimated() {
             <CardContent className="flex justify-center">
               <SimpleCalendar
                 onSelect={handleDateSelect}
-                workingDays={workingHours}
-                disabledDates={[]}
+                workingDays={getWorkingDaysArray()}
               />
             </CardContent>
             <CardContent className="flex justify-between">
